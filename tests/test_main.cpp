@@ -1,3 +1,2 @@
-#define BOOST_TEST_MODULE antlang
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <doctest/doctest.h>

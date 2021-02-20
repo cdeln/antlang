@@ -10,7 +10,7 @@
 namespace ant
 {
 
-class token_factory
+class token_factory final
 {
 private:
     std::vector<std::unique_ptr<token_builder>> builders;
@@ -37,7 +37,7 @@ make_token_factory()
 template <class... Tokens>
 struct token_factory_builder
 {
-    static constexpr token_factory make()
+    static token_factory make()
     {
         return make_token_factory<Tokens...>();
     }

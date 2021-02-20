@@ -4,9 +4,9 @@ project(antstack)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-g)
+add_compile_options(-g -Wall)
 
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(doctest REQUIRED)
 
 include_directories(antlang)
 

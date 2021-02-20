@@ -10,6 +10,8 @@ namespace ant
 class token_builder
 {
 public:
+    virtual ~token_builder() = default;
+
     virtual token_variant build(std::string const& data) const = 0;
 
     virtual std::string pattern() const = 0;

@@ -8,61 +8,47 @@ namespace ant
 
 struct left_parenthesis_token
 {
-    constexpr static char pattern[] = R"(\()";
+    static constexpr char name[] = "(";
+    static constexpr char pattern[] = R"(\()";
 };
 
 struct right_parenthesis_token
 {
-    constexpr static char pattern[] = R"(\))";
+    static constexpr char name[] = ")";
+    static constexpr char pattern[] = R"(\))";
 };
 
 struct function_token
 {
-    constexpr static char pattern[] = "function";
+    static constexpr char name[] = "function";
+    static constexpr char pattern[] = "function";
 };
 
 struct structure_token
 {
-    constexpr static char pattern[] = "structure";
-};
-
-struct protocol_token
-{
-    constexpr static char pattern[] = "protocol";
-};
-
-struct module_token
-{
-    constexpr static char pattern[] = "module";
-};
-
-struct import_token
-{
-    constexpr static char pattern[] = "import";
-};
-
-struct export_token
-{
-    constexpr static char pattern[] = "export";
+    static constexpr char name[] = "structure";
+    static constexpr char pattern[] = "structure";
 };
 
 struct floating_point_literal_token
 {
-    constexpr static char pattern[] = R"([0-9]+[.][0-9]+)";
+    static constexpr char name[] = "floating-point-literal";
+    static constexpr char pattern[] = R"([0-9]+[.][0-9]+)";
     std::string value;
 };
 
 struct integer_literal_token
 {
-    constexpr static char pattern[] = R"([0-9]+)";
+    static constexpr char name[] = "integer-literal";
+    static constexpr char pattern[] = R"([0-9]+)";
     std::string value;
 };
 
-
 struct identifier_token
 {
-    constexpr static char pattern[] = R"([^() ]+)";
-    std::string name;
+    static constexpr char name[] = "identifier";
+    static constexpr char pattern[] = R"([^() ]+)";
+    std::string value;
 };
 
 using token_variant =
@@ -71,10 +57,6 @@ using token_variant =
     , right_parenthesis_token
     , function_token
     , structure_token
-    , protocol_token
-    , module_token
-    , import_token
-    , export_token
     , floating_point_literal_token
     , integer_literal_token
     , identifier_token
@@ -91,5 +73,14 @@ struct token
     token_variant variant;
     token_context context;
 };
+
+template <class TokenAlternative>
+std::string token_name()
+{
+    return TokenAlternative::name;
+}
+
+std::string token_name(token_variant const& variant);
+
 
 } // namespace ant

@@ -1,10 +1,12 @@
 #include "formatting.hpp"
 #include "string_tokenizer.hpp"
+#include "parser.hpp"
 
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <queue>
 #include <streambuf>
 #include <string>
 #include <utility>
@@ -40,6 +42,7 @@ int main(int argc, char** argv)
     std::string line;
     int line_number = 0;
     ant::string_tokenizer tokenizer;
+
     while (std::getline(stream, line))
     {
         line_number += 1;
@@ -54,12 +57,43 @@ int main(int argc, char** argv)
                 return std::move(token);
             });
     }
+
     for (auto token : tokens)
     {
         std::cout << std::setw(4) << token.context.line << " "
                   << std::setw(4) << token.context.offset << " "
-                  << token.variant
+                  << token_string(token.variant)
                   << "\n";
     }
+
+    ant::parser<
+        ant::sequence<
+            ant::left_parenthesis_token,
+            ant::structure_token,
+            ant::repetition<ant::identifier_token>,
+            ant::right_parenthesis_token
+        >
+    > parser;
+
+    try
+    {
+        auto parsed = parser.parse(tokens.cbegin(), tokens.cend());
+    }
+    catch (ant::unexpected_token_error const& error)
+    {
+        const int line_index = error.context.line - 1;
+        const std::string line = lines.at(line_index);
+        const int line_length = line.size();
+        const int pad_left = error.context.offset - 1;
+        const int pad_right = line_length - pad_left - 1;
+        const std::string indent(4, ' ');
+        std::cout << error.what();
+        std::cout << ", as seen in context here\n"
+                  << indent << line << "\n"
+                  << indent << std::string(pad_left, '~')
+                  << '^'
+                  << std::string(pad_right, '~') << '\n';
+    }
+
     return 0;
 }
