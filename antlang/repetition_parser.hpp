@@ -10,7 +10,7 @@ namespace ant
 {
 
 template <class Rule>
-struct parser<repetition<Rule>>
+struct rule_parser<repetition<Rule>>
 {
     using attribute_type = attribute_of_t<repetition<Rule>>;
     using result_type = parser_result<attribute_type>;

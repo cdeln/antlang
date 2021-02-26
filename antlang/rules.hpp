@@ -49,5 +49,3 @@ struct attributed_token_rule
 };
 
 } // namespace ant
-
-#include "token_rules.hpp"

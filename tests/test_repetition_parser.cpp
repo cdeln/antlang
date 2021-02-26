@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "repetition_parser.hpp"
+#include "token_rules.hpp"
 
 #include <sstream>
 

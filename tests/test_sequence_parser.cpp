@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "sequence_parser.hpp"
+#include "token_rules.hpp"
 
 using namespace ant;
 

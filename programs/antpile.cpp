@@ -1,6 +1,7 @@
 #include "formatting.hpp"
 #include "string_tokenizer.hpp"
 #include "parser.hpp"
+#include "token_rules.hpp"
 
 #include <algorithm>
 #include <iomanip>

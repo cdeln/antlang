@@ -27,7 +27,7 @@ using type_at_t = typename type_at<I, Ts...>::type;
 } // namespace
 
 template <class... Rules>
-struct parser<sequence<Rules...>>
+struct rule_parser<sequence<Rules...>>
 {
     using attribute_type = attribute_of_t<sequence<Rules...>>;
 
