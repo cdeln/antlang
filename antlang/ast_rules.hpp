@@ -45,4 +45,24 @@ struct rule_of<ast::function>
     using type = ast_rule<ast::function>;
 };
 
+template <>
+struct ast_rule<ast::structure>
+    : rule
+        < sequence
+            < left_parenthesis_token,
+              identifier_token
+            , left_parenthesis_token
+            , repetition<ast::parameter>
+            , right_parenthesis_token
+            , right_parenthesis_token
+            >
+        , ast::function
+        > {};
+
+template <>
+struct rule_of<ast::structure>
+{
+    using type = ast_rule<ast::structure>;
+};
+
 } // namespace ant

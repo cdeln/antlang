@@ -21,5 +21,11 @@ struct function
     std::vector<parameter> parameters;
 };
 
+struct structure
+{
+    std::string name;
+    std::vector<parameter> fields;
+};
+
 } // namespace ast
 } // namespace ant
