@@ -8,14 +8,15 @@
 namespace ant
 {
 
-template <class Element>
+template <class Attribute>
 struct ast_rule;
 
 template <>
 struct ast_rule<ast::parameter>
     : rule
         < sequence<identifier_token, identifier_token>
-        , ast::parameter > {};
+        , ast::parameter
+        > {};
 
 template <>
 struct rule_of<ast::parameter>

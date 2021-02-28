@@ -11,7 +11,7 @@ namespace ant
 {
 
 template <class Token>
-struct rule_parser<non_attributed_token_rule<Token>>
+struct parser<non_attributed_token_rule<Token>>
 {
     parser_result<none>
     parse(std::vector<token>::const_iterator pos,
@@ -36,7 +36,7 @@ struct rule_parser<non_attributed_token_rule<Token>>
 };
 
 template <class Token, typename Attribute>
-struct rule_parser<attributed_token_rule<Token, Attribute>>
+struct parser<attributed_token_rule<Token, Attribute>>
 {
     parser_result<Attribute>
     parse(std::vector<token>::const_iterator pos,

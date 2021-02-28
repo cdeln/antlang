@@ -9,10 +9,10 @@
 namespace ant
 {
 
-template <class Rule>
-struct rule_parser<repetition<Rule>>
+template <class T>
+struct parser<repetition<T>>
 {
-    using attribute_type = attribute_of_t<repetition<Rule>>;
+    using attribute_type = attribute_of_t<repetition<T>>;
     using result_type = parser_result<attribute_type>;
 
     result_type
@@ -24,7 +24,7 @@ struct rule_parser<repetition<Rule>>
         {
             try
             {
-                parser<Rule> sub_parser;
+                auto sub_parser = make_parser<T>();
                 auto sub_result = sub_parser.parse(position, end);
                 if constexpr (!std::is_same_v<attribute_type, none>)
                 {

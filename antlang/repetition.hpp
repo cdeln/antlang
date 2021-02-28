@@ -8,11 +8,11 @@
 namespace ant
 {
 
-template <class Rule>
+template <typename T>
 struct repetition
     : rule
-        < repetition<Rule>
-        , remove_none_t<std::vector<attribute_of_t<rule_of_t<Rule>>>>
+        < repetition<T>
+        , remove_none_t<std::vector<attribute_of_t<rule_of_t<T>>>>
         >
 {
 };

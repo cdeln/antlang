@@ -7,10 +7,13 @@ namespace ant
 {
 
 template <class Rule>
-struct rule_parser;
+struct parser;
 
-template <class Rule>
-struct parser : rule_parser<rule_of_t<Rule>> {};
+template <typename T>
+auto make_parser()
+{
+    return parser<rule_of_t<T>>();
+}
 
 } // namespace ant
 

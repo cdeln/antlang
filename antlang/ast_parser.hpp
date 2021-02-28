@@ -24,19 +24,16 @@ Struct convert(std::tuple<Ts...> const& x)
     return convert_impl<Struct>(x, std::make_index_sequence<sizeof...(Ts)>());
 }
 
-template <class Element>
-struct rule_parser<ast_rule<Element>>
+template <typename Attribute>
+struct parser<ast_rule<Attribute>>
 {
-    using rule_type = rule_of_t<Element>;
-    using attribute_type = attribute_of_t<rule_type>;
-
-    parser_result<attribute_type>
+    parser_result<Attribute>
     parse(std::vector<token>::const_iterator pos,
           std::vector<token>::const_iterator end) const
     {
-        parser<rule_type> parser;
+        auto parser = make_parser<ast_rule<Attribute>>();
         auto [value, next] = parser.parse(pos, end);
-        return {convert<attribute_type>(value), next};
+        return {convert<Attribute>(value), next};
     }
 };
 

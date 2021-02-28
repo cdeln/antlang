@@ -26,10 +26,10 @@ using type_at_t = typename type_at<I, Ts...>::type;
 
 } // namespace
 
-template <class... Rules>
-struct rule_parser<sequence<Rules...>>
+template <class... Ts>
+struct parser<sequence<Ts...>>
 {
-    using attribute_type = attribute_of_t<sequence<Rules...>>;
+    using attribute_type = attribute_of_t<sequence<Ts...>>;
 
     std::vector<token>::const_iterator
     recursive_sub_parse(
@@ -51,7 +51,7 @@ struct rule_parser<sequence<Rules...>>
             const std::index_sequence<RuleIdx, RuleInds...>,
             const std::index_sequence<>)
     {
-        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Rules...>>;
+        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Ts...>>;
         using sub_attr = attribute_of_t<sub_rule>;
         static_assert(std::is_same_v<sub_attr, none>);
         parser<sub_rule> sub_parser;
@@ -75,7 +75,7 @@ struct rule_parser<sequence<Rules...>>
             std::index_sequence<RuleIdx, RuleInds...> rule_inds,
             std::index_sequence<AttrIdx, AttrInds...> attr_inds)
     {
-        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Rules...>>;
+        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Ts...>>;
         parser<sub_rule> sub_parser;
         auto result = sub_parser.parse(pos, end);
         if constexpr (!std::is_same_v<attribute_of_t<sub_rule>, none>)
@@ -106,7 +106,7 @@ struct rule_parser<sequence<Rules...>>
             recursive_sub_parse(
                 result.value,
                 pos, end,
-                std::make_index_sequence<sizeof...(Rules)>(),
+                std::make_index_sequence<sizeof...(Ts)>(),
                 std::make_index_sequence<std::tuple_size_v<attribute_type>>());
         return result;
     }

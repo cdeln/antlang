@@ -10,7 +10,7 @@ TEST_CASE("can parse parameter")
     std::vector<token> tokens;
     tokens.push_back({identifier_token{"type"}});
     tokens.push_back({identifier_token{"name"}});
-    parser<ast::parameter> parser;
+    auto parser = make_parser<ast::parameter>();
     auto [param, pos] = parser.parse(tokens.cbegin(), tokens.cend());
     CHECK(param.type == "type");
     CHECK(param.name == "name");
@@ -29,9 +29,9 @@ TEST_CASE("can parse function")
       , {right_parenthesis_token{}}
       , {right_parenthesis_token{}}
       };
-    parser<ast::function> parser;
-    auto [param, pos] = parser.parse(tokens.cbegin(), tokens.cend());
-    CHECK(param.name == "function-name");
-    CHECK(param.return_type == "return-type");
+    auto parser = make_parser<ast::function>();
+    auto [func, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(func.name == "function-name");
+    CHECK(func.return_type == "return-type");
     CHECK(pos == tokens.end());
 }

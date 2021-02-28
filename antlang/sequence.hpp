@@ -8,11 +8,11 @@
 namespace ant
 {
 
-template <typename... Rules>
+template <typename... Ts>
 struct sequence
     : rule
-        < sequence<Rules...>
-        , remove_none_t<std::tuple<attribute_of_t<rule_of_t<Rules>>...>>
+        < sequence<Ts...>
+        , remove_none_t<std::tuple<attribute_of_t<rule_of_t<Ts>>...>>
         >
 {
 };
