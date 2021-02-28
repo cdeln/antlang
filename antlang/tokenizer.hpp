@@ -10,13 +10,13 @@
 namespace ant
 {
 
-class string_tokenizer
+class tokenizer
 {
 public:
 
-    explicit string_tokenizer(token_factory&& factor);
+    explicit tokenizer(token_factory&& factor);
 
-    string_tokenizer();
+    tokenizer();
 
     std::vector<token> tokenize(std::string const& source) const;
 

@@ -1,5 +1,5 @@
 #include "formatting.hpp"
-#include "string_tokenizer.hpp"
+#include "tokenizer.hpp"
 #include "parser.hpp"
 #include "token_rules.hpp"
 
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     std::vector<ant::token> tokens;
     std::string line;
     int line_number = 0;
-    ant::string_tokenizer tokenizer;
+    ant::tokenizer tokenizer;
 
     while (std::getline(stream, line))
     {

@@ -1,21 +1,21 @@
-#include "string_tokenizer.hpp"
+#include "tokenizer.hpp"
 
 namespace ant
 {
 
-string_tokenizer::string_tokenizer(token_factory&& factory)
+tokenizer::tokenizer(token_factory&& factory)
     : pattern(factory.pattern())
     , factory(std::move(factory))
 {
 }
 
-string_tokenizer::string_tokenizer()
-    : string_tokenizer(token_factory_builder<token_variant>::make())
+tokenizer::tokenizer()
+    : tokenizer(token_factory_builder<token_variant>::make())
 {
 }
 
 std::vector<token>
-string_tokenizer::tokenize(std::string const& source) const
+tokenizer::tokenize(std::string const& source) const
 {
     const auto matches_end = std::sregex_iterator();
     std::vector<token> tokens;

@@ -1,13 +1,13 @@
 #include <doctest/doctest.h>
 
-#include "string_tokenizer.hpp"
+#include "tokenizer.hpp"
 
 using namespace ant;
 
 TEST_CASE("string_tokenizer_tokenizes_simple_string_with_all_tokens")
 {
     constexpr auto string = "() function structure i337 1337 13.37";
-    const string_tokenizer tokenizer;
+    const tokenizer tokenizer;
     const auto tokens = tokenizer.tokenize(string);
 
     REQUIRE(tokens.size() == 7);
