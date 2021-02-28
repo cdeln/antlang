@@ -9,23 +9,6 @@
 namespace ant
 {
 
-namespace detail
-{
-
-template <int I, typename T, typename... Ts>
-struct type_at : type_at<I - 1, Ts...> {};
-
-template <typename T, typename... Ts>
-struct type_at<0, T, Ts...>
-{
-    using type = T;
-};
-
-template <int I, typename... Ts>
-using type_at_t = typename type_at<I, Ts...>::type;
-
-} // namespace
-
 template <class... Ts>
 struct parser<sequence<Ts...>>
 {
@@ -51,7 +34,7 @@ struct parser<sequence<Ts...>>
             const std::index_sequence<RuleIdx, RuleInds...>,
             const std::index_sequence<>)
     {
-        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Ts...>>;
+        using sub_rule = rule_of_t<type_at_t<RuleIdx, Ts...>>;
         using sub_attr = attribute_of_t<sub_rule>;
         static_assert(std::is_same_v<sub_attr, none>);
         parser<sub_rule> sub_parser;
@@ -75,7 +58,7 @@ struct parser<sequence<Ts...>>
             std::index_sequence<RuleIdx, RuleInds...> rule_inds,
             std::index_sequence<AttrIdx, AttrInds...> attr_inds)
     {
-        using sub_rule = rule_of_t<detail::type_at_t<RuleIdx, Ts...>>;
+        using sub_rule = rule_of_t<type_at_t<RuleIdx, Ts...>>;
         parser<sub_rule> sub_parser;
         auto result = sub_parser.parse(pos, end);
         if constexpr (!std::is_same_v<attribute_of_t<sub_rule>, none>)

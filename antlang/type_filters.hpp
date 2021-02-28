@@ -54,4 +54,16 @@ struct remove_none<std::vector<none>>
     using type = none;
 };
 
+template <int I, typename T, typename... Ts>
+struct type_at : type_at<I - 1, Ts...> {};
+
+template <typename T, typename... Ts>
+struct type_at<0, T, Ts...>
+{
+    using type = T;
+};
+
+template <int I, typename... Ts>
+using type_at_t = typename type_at<I, Ts...>::type;
+
 } // namespace ant

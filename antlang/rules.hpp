@@ -16,8 +16,8 @@ struct rule_of
     using type = typename Rule::rule_type;
 };
 
-template <class Token>
-using rule_of_t = typename rule_of<Token>::type;
+template <typename T>
+using rule_of_t = typename rule_of<T>::type;
 
 template <class Rule>
 struct attribute_of
