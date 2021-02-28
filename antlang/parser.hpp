@@ -18,6 +18,7 @@ auto make_parser()
 } // namespace ant
 
 #include "parser_result.hpp"
+#include "alternative_parser.hpp"
 #include "repetition_parser.hpp"
 #include "sequence_parser.hpp"
 #include "token_parsers.hpp"

@@ -15,7 +15,7 @@ struct parser<repetition<T>>
 
     result_type
     parse(std::vector<token>::const_iterator pos,
-          std::vector<token>::const_iterator end)
+          std::vector<token>::const_iterator end) const
     {
         result_type result;
         while (pos != end)
@@ -30,7 +30,11 @@ struct parser<repetition<T>>
                 }
                 pos = sub_result.position;
             }
-            catch (unexpected_token_error const& e)
+            catch (unexpected_token_error const&)
+            {
+                break;
+            }
+            catch (alternative_parser_error const&)
             {
                 break;
             }

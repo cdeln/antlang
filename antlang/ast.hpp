@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace ant
@@ -25,6 +26,20 @@ struct structure
 {
     std::string name;
     std::vector<parameter> fields;
+};
+
+struct evaluation;
+
+using expression =
+    std::variant
+      < evaluation
+      , std::string
+      >;
+
+struct evaluation
+{
+    std::string function;
+    std::vector<expression> arguments;
 };
 
 } // namespace ast

@@ -20,7 +20,7 @@ struct parser<sequence<Ts...>>
             const std::vector<token>::const_iterator pos,
             const std::vector<token>::const_iterator end,
             const std::index_sequence<>,
-            const std::index_sequence<>)
+            const std::index_sequence<>) const
     {
         return pos;
     }
@@ -32,7 +32,7 @@ struct parser<sequence<Ts...>>
             const std::vector<token>::const_iterator pos,
             const std::vector<token>::const_iterator end,
             const std::index_sequence<RuleIdx, RuleInds...>,
-            const std::index_sequence<>)
+            const std::index_sequence<>) const
     {
         using sub_rule = rule_of_t<type_at_t<RuleIdx, Ts...>>;
         using sub_attr = attribute_of_t<sub_rule>;
@@ -56,7 +56,7 @@ struct parser<sequence<Ts...>>
             const std::vector<token>::const_iterator pos,
             const std::vector<token>::const_iterator end,
             std::index_sequence<RuleIdx, RuleInds...> rule_inds,
-            std::index_sequence<AttrIdx, AttrInds...> attr_inds)
+            std::index_sequence<AttrIdx, AttrInds...> attr_inds) const
     {
         using sub_rule = rule_of_t<type_at_t<RuleIdx, Ts...>>;
         parser<sub_rule> sub_parser;
@@ -82,7 +82,7 @@ struct parser<sequence<Ts...>>
 
     parser_result<attribute_type>
     parse(std::vector<token>::const_iterator pos,
-          std::vector<token>::const_iterator end)
+          std::vector<token>::const_iterator end) const
     {
         parser_result<attribute_type> result;
         result.position =

@@ -5,6 +5,7 @@
 #include "parser.hpp"
 #include "type_filters.hpp"
 
+#include <sstream>
 #include <utility>
 
 namespace ant
