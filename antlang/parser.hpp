@@ -19,7 +19,9 @@ auto make_parser()
 
 #include "parser_result.hpp"
 #include "alternative_parser.hpp"
+#include "discard_parser.hpp"
 #include "literal_parser.hpp"
+#include "match_parser.hpp"
 #include "repetition_parser.hpp"
 #include "sequence_parser.hpp"
 #include "token_parsers.hpp"

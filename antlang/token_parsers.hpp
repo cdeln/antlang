@@ -15,7 +15,7 @@ struct parser<non_attributed_token_rule<Token>>
 {
     parser_result<none>
     parse(std::vector<token>::const_iterator pos,
-          std::vector<token>::const_iterator end)
+          std::vector<token>::const_iterator end) const
     {
         if (pos == end)
         {
@@ -40,7 +40,7 @@ struct parser<attributed_token_rule<Token, Attribute>>
 {
     parser_result<Attribute>
     parse(std::vector<token>::const_iterator pos,
-          std::vector<token>::const_iterator end)
+          std::vector<token>::const_iterator end) const
     {
         if (pos == end)
         {
@@ -65,7 +65,7 @@ struct parser<attributed_token_rule<Token, none>>
 {
     parser_result<none>
     parse(std::vector<token>::const_iterator pos,
-          std::vector<token>::const_iterator end)
+          std::vector<token>::const_iterator end) const
     {
         if (pos == end)
         {

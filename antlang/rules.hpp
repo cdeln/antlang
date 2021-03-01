@@ -48,11 +48,10 @@ struct attributed_token_rule
 {
 };
 
-
-template <class Token>
-struct discard_token
+template <typename T>
+struct discard
     : public rule
-        < attributed_token_rule<Token, none>
+        < discard<T>
         , none >
 {
 };

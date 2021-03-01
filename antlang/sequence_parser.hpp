@@ -5,6 +5,7 @@
 #include "fundamental_types.hpp"
 
 #include <utility>
+#include <vector>
 
 namespace ant
 {

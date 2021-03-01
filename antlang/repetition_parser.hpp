@@ -4,6 +4,8 @@
 #include "parser.hpp"
 #include "repetition.hpp"
 
+#include <vector>
+
 namespace ant
 {
 

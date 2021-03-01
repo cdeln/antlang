@@ -187,31 +187,28 @@ TEST_CASE("parsing narrowing integer conversion raises error")
     CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
 }
 
+TEST_CASE("mismatching identifier token value and literal type raises error")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"i32"}},
+        {integer_literal_token{"123"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::i64>();
+    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+}
 
 TEST_CASE("can parse 32 bit floating point literal")
 {
     const std::vector<token> tokens = {
         {left_parenthesis_token{}},
         {identifier_token{"f32"}},
-        {integer_literal_token{"13.37"}},
+        {floating_point_literal_token{"13.37"}},
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::f32>();
     const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
     CHECK(pos == tokens.cend());
     CHECK(literal.value == doctest::Approx(13.37f));
-}
-
-TEST_CASE("can parase an integer literal as floating point")
-{
-    const std::vector<token> tokens = {
-        {left_parenthesis_token{}},
-        {identifier_token{"f32"}},
-        {integer_literal_token{"1337"}},
-        {right_parenthesis_token{}}
-    };
-    const auto parser = make_parser<ast::f32>();
-    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
-    CHECK(pos == tokens.cend());
-    CHECK(literal.value == doctest::Approx(1337.0f));
 }

@@ -3,7 +3,9 @@
 #include "ast.hpp"
 #include "alternative.hpp"
 #include "literal_rule.hpp"
+#include "match.hpp"
 #include "repetition.hpp"
+#include "rules.hpp"
 #include "sequence.hpp"
 #include "token_rules.hpp"
 
@@ -94,13 +96,21 @@ struct rule_of<ast::structure>
 };
 
 template <typename T>
-struct ast_rule<ast::literal<T>>
-    : rule<
-        sequence
-          < left_parenthesis_token
-          , discard_token<identifier_token>
-          , literal_rule<T, detail::token_type_t<T>>
-          , right_parenthesis_token
+struct ast_rule<ast::literal<T>> :
+    rule<
+        sequence<
+            left_parenthesis_token,
+            discard<
+                match<
+                    identifier_token,
+                    ast::name_of<ast::literal<T>>
+                >
+            >,
+            literal_rule<
+                ast::literal<T>,
+                detail::token_type_t<ast::literal<T>>
+            >,
+            right_parenthesis_token
           >
         , ast::literal<T>
       > {};
