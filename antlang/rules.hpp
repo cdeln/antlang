@@ -48,4 +48,13 @@ struct attributed_token_rule
 {
 };
 
+
+template <class Token>
+struct discard_token
+    : public rule
+        < attributed_token_rule<Token, none>
+        , none >
+{
+};
+
 } // namespace ant

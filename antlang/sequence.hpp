@@ -9,11 +9,15 @@ namespace ant
 {
 
 template <typename... Ts>
-struct sequence
-    : rule
-        < sequence<Ts...>
-        , remove_none_t<std::tuple<attribute_of_t<rule_of_t<Ts>>...>>
+struct sequence :
+    rule<
+        sequence<Ts...>,
+        remove_none_t<
+            std::tuple<
+                attribute_of_t<rule_of_t<Ts>>...
+            >
         >
+    >
 {
 };
 

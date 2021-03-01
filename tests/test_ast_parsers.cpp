@@ -148,3 +148,70 @@ TEST_CASE("can parse complex evaluation")
     REQUIRE(std::holds_alternative<std::string>(inner_eval_2.arguments.at(0)));
     CHECK(std::get<std::string>(inner_eval_2.arguments.at(0)) == "arg2");
 }
+
+TEST_CASE("can parse 32 bit integer literal")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"i32"}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::i32>();
+    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    CHECK(literal.value == 1337);
+}
+
+TEST_CASE("parsing floating point literal as integer raises error")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"i32"}},
+        {floating_point_literal_token{"13.37"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::i32>();
+    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+}
+
+TEST_CASE("parsing narrowing integer conversion raises error")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"u8"}},
+        {integer_literal_token{"256"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::u8>();
+    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+}
+
+
+TEST_CASE("can parse 32 bit floating point literal")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"f32"}},
+        {integer_literal_token{"13.37"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::f32>();
+    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    CHECK(literal.value == doctest::Approx(13.37f));
+}
+
+TEST_CASE("can parase an integer literal as floating point")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"f32"}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::f32>();
+    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    CHECK(literal.value == doctest::Approx(1337.0f));
+}
