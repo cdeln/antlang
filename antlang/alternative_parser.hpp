@@ -41,7 +41,7 @@ struct parser<alternative<Ts...>>
             auto [value, next] = sub_parser.parse(pos, end);
             return {value, next};
         }
-        catch (unexpected_token_error const&)
+        catch (exception const&)
         {
             return recursive_sub_parse(std::index_sequence<Is...>(), pos, end);
         }

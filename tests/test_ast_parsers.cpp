@@ -212,3 +212,19 @@ TEST_CASE("can parse 32 bit floating point literal")
     CHECK(pos == tokens.cend());
     CHECK(literal.value == doctest::Approx(13.37f));
 }
+
+TEST_CASE("can parse literal variant with integer alternative")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"i32"}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::literal_variant>();
+    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    REQUIRE(std::holds_alternative<ast::i32>(literal));
+    const auto i32 = std::get<ast::i32>(literal);
+    CHECK(i32.value == 1337);
+}
