@@ -147,9 +147,9 @@ template <>
 struct ast_rule<ast::expression> :
     rule_spec<
         alternative<
-            ast::evaluation,
-            identifier_token
-            // , ast::literal_variant
+            identifier_token,
+            ast::literal_variant,
+            ast::evaluation
         >,
         ast::expression
     >

@@ -68,19 +68,20 @@ template <class Literal>
 constexpr auto const name_of_v = name_of<Literal>::value;
 
 using literal_variant =
-    std::variant
-      < i8, i16, i32, i64
-      , u8, u16, u32, u64
-      , f32, f64 >;
+    std::variant<
+        i8, i16, i32, i64,
+        u8, u16, u32, u64,
+        f32, f64
+    >;
 
 struct evaluation;
 
 using expression =
-    std::variant
-      < evaluation
-      , std::string
-      // , literal_variant
-      >;
+    std::variant<
+        std::string,
+        literal_variant,
+        evaluation
+    >;
 
 struct evaluation
 {

@@ -228,3 +228,65 @@ TEST_CASE("can parse literal variant with integer alternative")
     const auto i32 = std::get<ast::i32>(literal);
     CHECK(i32.value == 1337);
 }
+
+TEST_CASE("can parse identifier expression")
+{
+    const std::vector<token> tokens = {
+        {identifier_token{"name"}},
+    };
+    const auto parser = make_parser<ast::expression>();
+    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    REQUIRE(std::holds_alternative<std::string>(expr));
+    const auto name = std::get<std::string>(expr);
+    CHECK(name == "name");
+}
+
+TEST_CASE("can parse literal expression")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {identifier_token{"i32"}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::expression>();
+    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    REQUIRE(std::holds_alternative<ast::literal_variant>(expr));
+    const auto variant = std::get<ast::literal_variant>(expr);
+    REQUIRE(std::holds_alternative<ast::i32>(variant));
+    const auto literal = std::get<ast::i32>(variant);
+    CHECK(literal.value == 1337);
+}
+
+TEST_CASE("can parse evaluation expression")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+            {identifier_token{"my-function"}},
+
+            {left_parenthesis_token{}},
+                {identifier_token{"i32"}},
+                {integer_literal_token{"1337"}},
+            {right_parenthesis_token{}},
+
+            {identifier_token{"my-argument"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::expression>();
+    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(pos == tokens.cend());
+    REQUIRE(std::holds_alternative<ast::evaluation>(expr));
+    const auto eval = std::get<ast::evaluation>(expr);
+    CHECK(eval.function == "my-function");
+    REQUIRE(eval.arguments.size() == 2);
+    REQUIRE(std::holds_alternative<ast::literal_variant>(eval.arguments.at(0)));
+    const auto variant = std::get<ast::literal_variant>(eval.arguments.at(0));
+    REQUIRE(std::holds_alternative<ast::i32>(variant));
+    const auto literal = std::get<ast::i32>(variant);
+    CHECK(literal.value == 1337);
+    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(1)));
+    const auto name  = std::get<std::string>(eval.arguments.at(1));
+    CHECK(name == "my-argument");
+}
