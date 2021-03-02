@@ -5,7 +5,6 @@
 #include "literal_rule.hpp"
 #include "match.hpp"
 #include "repetition.hpp"
-#include "rules.hpp"
 #include "sequence.hpp"
 #include "token_rules.hpp"
 
@@ -60,11 +59,13 @@ struct ast_rule<ast::function> :
     rule_spec<
         sequence<
             left_parenthesis_token,
+            function_token,
             identifier_token,
             identifier_token,
             left_parenthesis_token,
             repetition<ast::parameter>,
             right_parenthesis_token,
+            ast::expression,
             right_parenthesis_token
         >,
         ast::function
@@ -82,6 +83,7 @@ struct ast_rule<ast::structure> :
     rule_spec<
         sequence<
             left_parenthesis_token,
+            structure_token,
             identifier_token,
             left_parenthesis_token,
             repetition<ast::parameter>,

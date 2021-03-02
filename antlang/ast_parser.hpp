@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast_rules.hpp"
 #include "parser.hpp"
 #include "parser_result.hpp"
 #include "tokens.hpp"

@@ -67,14 +67,9 @@ int main(int argc, char** argv)
                   << "\n";
     }
 
-    ant::parser<
-        ant::sequence<
-            ant::left_parenthesis_token,
-            ant::structure_token,
-            ant::repetition<ant::identifier_token>,
-            ant::right_parenthesis_token
-        >
-    > parser;
+    const auto parser =
+        ant::make_parser<ant::ast::function>();
+
 
     try
     {

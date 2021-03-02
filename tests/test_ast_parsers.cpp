@@ -20,16 +20,20 @@ TEST_CASE("can parse parameter")
 
 TEST_CASE("can parse function")
 {
-    const std::vector<token> tokens =
-      { {left_parenthesis_token{}}
-      , {identifier_token{"function-name"}}
-      , {identifier_token{"return-type"}}
-      , {left_parenthesis_token{}}
-      , {identifier_token{"parameter-type"}}
-      , {identifier_token{"parameter-name"}}
-      , {right_parenthesis_token{}}
-      , {right_parenthesis_token{}}
-      };
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+            {function_token{}},
+            {identifier_token{"function-name"}},
+            {identifier_token{"return-type"}},
+
+            {left_parenthesis_token{}},
+            {identifier_token{"parameter-type"}},
+            {identifier_token{"parameter-name"}},
+            {right_parenthesis_token{}},
+
+            {identifier_token{"paramter-name"}},
+        {right_parenthesis_token{}}
+    };
     const auto parser = make_parser<ast::function>();
     const auto [function, pos] = parser.parse(tokens.cbegin(), tokens.cend());
     CHECK(function.name == "function-name");
@@ -42,15 +46,16 @@ TEST_CASE("can parse function")
 
 TEST_CASE("can parse structure")
 {
-    const std::vector<token> tokens =
-      { {left_parenthesis_token{}}
-      , {identifier_token{"structure-name"}}
-      , {left_parenthesis_token{}}
-      , {identifier_token{"field-type"}}
-      , {identifier_token{"field-name"}}
-      , {right_parenthesis_token{}}
-      , {right_parenthesis_token{}}
-      };
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {structure_token{}},
+        {identifier_token{"structure-name"}},
+        {left_parenthesis_token{}},
+        {identifier_token{"field-type"}},
+        {identifier_token{"field-name"}},
+        {right_parenthesis_token{}},
+        {right_parenthesis_token{}}
+    };
     const auto parser = make_parser<ast::structure>();
     const auto [value, pos] = parser.parse(tokens.cbegin(), tokens.cend());
     CHECK(value.name == "structure-name");

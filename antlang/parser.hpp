@@ -18,6 +18,7 @@ auto make_parser()
 } // namespace ant
 
 #include "parser_result.hpp"
+#include "ast_parser.hpp"
 #include "alternative_parser.hpp"
 #include "discard_parser.hpp"
 #include "literal_parser.hpp"
