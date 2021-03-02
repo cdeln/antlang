@@ -7,7 +7,7 @@ namespace ant
 
 template <class Value, class Pattern>
 struct match :
-    public rule<
+    rule_spec<
         match<Value, Pattern>,
         Value
     >

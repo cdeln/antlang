@@ -10,7 +10,7 @@ namespace ant
 
 template <typename... Ts>
 struct sequence :
-    rule<
+    rule_spec<
         sequence<Ts...>,
         remove_none_t<
             std::tuple<

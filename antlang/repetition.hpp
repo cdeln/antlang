@@ -9,11 +9,15 @@ namespace ant
 {
 
 template <typename T>
-struct repetition
-    : rule
-        < repetition<T>
-        , remove_none_t<std::vector<attribute_of_t<rule_of_t<T>>>>
+struct repetition :
+    rule_spec<
+        repetition<T>,
+        remove_none_t<
+            std::vector<
+                attribute_of_t<rule_of_t<T>>
+            >
         >
+    >
 {
 };
 

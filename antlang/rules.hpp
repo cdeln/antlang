@@ -4,55 +4,58 @@ namespace ant
 {
 
 template <class Rule, typename Attribute>
-struct rule
+struct rule_spec
 {
     using rule_type = Rule;
     using attribute_type = Attribute;
 };
 
-template <class Rule>
+template <class Spec>
 struct rule_of
 {
-    using type = typename Rule::rule_type;
+    using type = typename Spec::rule_type;
 };
 
-template <typename T>
-using rule_of_t = typename rule_of<T>::type;
+template <typename Spec>
+using rule_of_t = typename rule_of<Spec>::type;
 
-template <class Rule>
+template <class Spec>
 struct attribute_of
 {
-    using type = typename Rule::attribute_type;
+    using type = typename Spec::attribute_type;
 };
 
-template <class Rule>
-using attribute_of_t = typename attribute_of<Rule>::type;
+template <class Spec>
+using attribute_of_t = typename attribute_of<Spec>::type;
 
 class none
 {
 };
 
 template <class Token>
-struct non_attributed_token_rule
-    : public rule
-        < non_attributed_token_rule<Token>
-        , none >
+struct non_attributed_token_rule :
+    rule_spec<
+        non_attributed_token_rule<Token>,
+        none
+    >
 {
 };
 
 template <class Token, typename Attribute>
-struct attributed_token_rule
-    : public rule
-        < attributed_token_rule<Token, Attribute>
-        , Attribute >
+struct attributed_token_rule :
+    rule_spec<
+        attributed_token_rule<Token, Attribute>,
+        Attribute
+    >
 {
 };
 
 template <typename T>
-struct discard
-    : public rule
-        < discard<T>
-        , none >
+struct discard :
+    rule_spec<
+        discard<T>,
+        none
+    >
 {
 };
 

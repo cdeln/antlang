@@ -8,11 +8,13 @@ namespace ant
 {
 
 template <typename... Ts>
-struct alternative
-    : rule
-        < alternative<Ts...>
-        , std::variant<attribute_of_t<rule_of_t<Ts>>...>
+struct alternative :
+    rule_spec<
+        alternative<Ts...>,
+        std::variant<
+            attribute_of_t<rule_of_t<Ts>>...
         >
+    >
 {
 };
 
