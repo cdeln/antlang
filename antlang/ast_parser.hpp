@@ -53,8 +53,11 @@ struct parser<ast_rule<Attribute>>
         {
             std::stringstream message;
             message << "While parsing " << ast::name_of_v<Attribute>;
-            auto sub_failure = std::make_unique<parser_failure>(std::move(get_failure(result)));
-            return parser_failure{message.str(), pos->context, std::move(sub_failure)};
+            return parser_failure{
+                message.str(),
+                pos->context,
+                std::make_unique<parser_failure>(std::move(get_failure(result)))
+            };
         }
     }
 };

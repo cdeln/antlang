@@ -51,8 +51,7 @@ struct parser<attributed_token_rule<Token, Attribute>>
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
-                    << ", got " << quote(token_name(pos->variant))
-                    << ", at line " << pos->context.line;
+                    << ", got " << quote(token_name(pos->variant));
             return parser_failure{message.str(), pos->context};
         }
         return parser_success<Attribute>{std::get<Token>(pos->variant).value, pos + 1};

@@ -23,27 +23,6 @@ struct parser_failure
     std::unique_ptr<parser_failure> previous;
 };
 
-// template <typename Attribute>
-// struct parser_result
-// {
-//     using value_type =
-//         std::variant<
-//             parser_success<Attribute>,
-//             parser_failure
-//         >;
-//     value_type variant;
-// 
-//     parser_result(parser_success<Attribute>&& alternative)
-//         : variant(std::move(alternative))
-//     {
-//     }
-// 
-//     parser_result(parser_failure&& alternative)
-//         : variant(std::move(alternative))
-//     {
-//     }
-// };
-
 template <typename Attribute>
 using parser_result =
     std::variant<

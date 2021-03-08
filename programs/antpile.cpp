@@ -27,40 +27,6 @@ read_file(std::string const& filename)
         std::istreambuf_iterator<char>());
 }
 
-struct error_handler
-{
-    std::vector<std::string> lines;
-
-    error_handler(std::vector<std::string> const& lines)
-        : lines(lines)
-    {
-    }
-
-    void handle(ant::exception const& error, int level = 0)
-    {
-        const int line_index = error.context.line - 1;
-        const std::string line = lines.at(line_index);
-        const int line_length = line.size();
-        const int pad_left = error.context.offset - 1;
-        const int pad_right = line_length - pad_left - 1;
-        std::cout << error.what();
-        std::cout << ", at line " << error.context.line
-                  << ", as seen in context here\n"
-                  << std::string(2*level, ' ') << line << "\n"
-                  << std::string(2*level, ' ') << std::string(pad_left, '~')
-                  << '^'
-                  << std::string(pad_right, '~') << "\n\n";
-        try
-        {
-            std::rethrow_if_nested(error);
-        }
-        catch (ant::exception const& nested)
-        {
-            handle(nested, level + 1);
-        }
-    }
-};
-
 struct failure_handler
 {
     std::vector<std::string> lines;

@@ -125,13 +125,11 @@ struct parser<sequence<Ts...>>
         }
         else
         {
-            auto& sub_failure = get_failure(result);
-            sub_failure.previous =
-                std::make_unique<parser_failure>(parser_failure{
-                    "While parsing sequence",
-                    pos->context,
-                });
-            return std::move(sub_failure);
+            return parser_failure{
+                "While parsing sequence",
+                pos->context,
+                std::make_unique<parser_failure>(std::move(get_failure(result)))
+            };
         }
     }
 };
