@@ -27,11 +27,10 @@ struct parser<non_attributed_token_rule<Token>>
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
-                    << ", got " << quote(token_name(pos->variant))
-                    << ", at line " << pos->context.line;
-            throw unexpected_token_error(message.str(), pos->context);
+                    << ", got " << quote(token_name(pos->variant));
+            return parser_failure{message.str(), pos->context};
         }
-        return {{}, pos + 1};
+        return parser_success<none>{{}, pos + 1};
     }
 };
 
@@ -54,9 +53,9 @@ struct parser<attributed_token_rule<Token, Attribute>>
             message << "Expected token " << quote(Token::name)
                     << ", got " << quote(token_name(pos->variant))
                     << ", at line " << pos->context.line;
-            throw unexpected_token_error(message.str(), pos->context);
+            return parser_failure{message.str(), pos->context};
         }
-        return {std::get<Token>(pos->variant).value, pos + 1};
+        return parser_success<Attribute>{std::get<Token>(pos->variant).value, pos + 1};
     }
 };
 
@@ -77,9 +76,8 @@ struct parser<attributed_token_rule<Token, none>>
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
-                    << ", got " << quote(token_name(pos->variant))
-                    << ", at line " << pos->context.line;
-            throw unexpected_token_error(message.str(), pos->context);
+                    << ", got " << quote(token_name(pos->variant));
+            return parser_success<none>{message.str(), pos->context};
         }
         return {none{}, pos + 1};
     }

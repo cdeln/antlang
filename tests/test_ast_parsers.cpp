@@ -12,7 +12,9 @@ TEST_CASE("can parse parameter")
       , {identifier_token{"name"}}
       };
     const auto parser = make_parser<ast::parameter>();
-    const auto [parameter, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [parameter, pos] = get_success(result);
     CHECK(parameter.type == "type");
     CHECK(parameter.name == "name");
     CHECK(pos == tokens.end());
@@ -35,7 +37,9 @@ TEST_CASE("can parse function")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::function>();
-    const auto [function, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [function, pos] = get_success(result);
     CHECK(function.name == "function-name");
     CHECK(function.return_type == "return-type");
     REQUIRE(function.parameters.size() == 1);
@@ -57,7 +61,9 @@ TEST_CASE("can parse structure")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::structure>();
-    const auto [value, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [value, pos] = get_success(result);
     CHECK(value.name == "structure-name");
     REQUIRE(value.fields.size() == 1);
     CHECK(value.fields.at(0).type == "field-type");
@@ -69,7 +75,9 @@ TEST_CASE("can parse identifier expression")
 {
     const std::vector<token> tokens = { {identifier_token{"name"}} };
     const auto parser = make_parser<ast::expression>();
-    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
     REQUIRE(std::holds_alternative<std::string>(expr));
     CHECK(std::get<std::string>(expr) == "name");
     CHECK(pos == tokens.end());
@@ -85,7 +93,9 @@ TEST_CASE("can parse simple evaluation")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::evaluation>();
-    const auto [eval, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [eval, pos] = get_success(result);
     CHECK(pos == tokens.end());
     CHECK(eval.function == "func");
     CHECK(eval.arguments.size() == 2);
@@ -105,7 +115,9 @@ TEST_CASE("can parse evaluation expression")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::expression>();
-    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.end());
     REQUIRE(std::holds_alternative<ast::evaluation>(expr));
     const auto eval = std::get<ast::evaluation>(expr);
@@ -133,7 +145,9 @@ TEST_CASE("can parse complex evaluation")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::evaluation>();
-    const auto [eval, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [eval, pos] = get_success(result);
 
     CHECK(pos == tokens.end());
     CHECK(eval.function == "outer-func");
@@ -163,7 +177,9 @@ TEST_CASE("can parse 32 bit integer literal")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::i32>();
-    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [literal, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     CHECK(literal.value == 1337);
 }
@@ -177,7 +193,7 @@ TEST_CASE("parsing floating point literal as integer raises error")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::i32>();
-    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+    CHECK(is_failure(parser.parse(tokens.cbegin(), tokens.cend())));
 }
 
 TEST_CASE("parsing narrowing integer conversion raises error")
@@ -189,7 +205,7 @@ TEST_CASE("parsing narrowing integer conversion raises error")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::u8>();
-    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+    CHECK(is_failure(parser.parse(tokens.cbegin(), tokens.cend())));
 }
 
 TEST_CASE("mismatching identifier token value and literal type raises error")
@@ -201,7 +217,7 @@ TEST_CASE("mismatching identifier token value and literal type raises error")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::i64>();
-    CHECK_THROWS(parser.parse(tokens.cbegin(), tokens.cend()));
+    CHECK(is_failure(parser.parse(tokens.cbegin(), tokens.cend())));
 }
 
 TEST_CASE("can parse 32 bit floating point literal")
@@ -213,7 +229,9 @@ TEST_CASE("can parse 32 bit floating point literal")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::f32>();
-    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [literal, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     CHECK(literal.value == doctest::Approx(13.37f));
 }
@@ -227,7 +245,9 @@ TEST_CASE("can parse literal variant with integer alternative")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::literal_variant>();
-    const auto [literal, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [literal, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     REQUIRE(std::holds_alternative<ast::i32>(literal));
     const auto i32 = std::get<ast::i32>(literal);
@@ -240,7 +260,9 @@ TEST_CASE("can parse identifier expression")
         {identifier_token{"name"}},
     };
     const auto parser = make_parser<ast::expression>();
-    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     REQUIRE(std::holds_alternative<std::string>(expr));
     const auto name = std::get<std::string>(expr);
@@ -256,7 +278,9 @@ TEST_CASE("can parse literal expression")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::expression>();
-    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     REQUIRE(std::holds_alternative<ast::literal_variant>(expr));
     const auto variant = std::get<ast::literal_variant>(expr);
@@ -280,7 +304,9 @@ TEST_CASE("can parse evaluation expression")
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::expression>();
-    const auto [expr, pos] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
     REQUIRE(std::holds_alternative<ast::evaluation>(expr));
     const auto eval = std::get<ast::evaluation>(expr);

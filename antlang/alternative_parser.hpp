@@ -24,9 +24,7 @@ struct parser<alternative<Ts...>>
             std::vector<token>::const_iterator pos,
             std::vector<token>::const_iterator end) const
     {
-        std::stringstream message;
-        message << "Failed to parse alternative";
-        throw alternative_parser_error(message.str(), pos->context);
+        return parser_failure{"Failed to parse alternative", pos->context};
     }
 
     template <size_t I, size_t... Is>
@@ -36,22 +34,34 @@ struct parser<alternative<Ts...>>
             std::vector<token>::const_iterator pos,
             std::vector<token>::const_iterator end) const
     {
-        try
+        const auto parser = make_parser<type_at_t<I, Ts...>>();
+        auto result = parser.parse(pos, end);
+        if (is_success(result))
         {
-            auto sub_parser = make_parser<type_at_t<I, Ts...>>();
-            auto [value, next] = sub_parser.parse(pos, end);
-            return {value, next};
+            auto [value, next] = get_success(result);
+            return parser_success<attribute_type>{std::move(value), next};
         }
-        catch (exception const&)
+        else
         {
-            return recursive_sub_parse(std::index_sequence<Is...>(), pos, end);
+            auto sub_result = recursive_sub_parse(std::index_sequence<Is...>(), pos, end);
+            if (is_success(sub_result))
+            {
+                return get_success(sub_result);
+            }
+            else
+            {
+                auto& failure = get_failure(result);
+                auto& sub_failure = get_failure(sub_result);
+                sub_failure.previous = std::make_unique<parser_failure>(std::move(failure));
+                return std::move(sub_failure);
+            }
         }
     }
 
     result_type
     parse(std::vector<token>::const_iterator pos,
           std::vector<token>::const_iterator end) const
-    {
+   {
         return recursive_sub_parse(std::make_index_sequence<sizeof...(Ts)>(), pos, end);
     }
 };

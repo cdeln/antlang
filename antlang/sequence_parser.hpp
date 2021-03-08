@@ -14,8 +14,9 @@ template <class... Ts>
 struct parser<sequence<Ts...>>
 {
     using attribute_type = attribute_of_t<sequence<Ts...>>;
+    using result_type = parser_result<attribute_type>;
 
-    std::vector<token>::const_iterator
+    result_type
     recursive_sub_parse(
             attribute_type& values,
             const std::vector<token>::const_iterator pos,
@@ -23,11 +24,11 @@ struct parser<sequence<Ts...>>
             const std::index_sequence<>,
             const std::index_sequence<>) const
     {
-        return pos;
+        return parser_success<attribute_type>{values, pos};
     }
 
     template<size_t RuleIdx, size_t... RuleInds>
-    std::vector<token>::const_iterator
+    result_type
     recursive_sub_parse(
             attribute_type& values,
             const std::vector<token>::const_iterator pos,
@@ -39,19 +40,28 @@ struct parser<sequence<Ts...>>
         using sub_attr = attribute_of_t<sub_rule>;
         static_assert(std::is_same_v<sub_attr, none>);
         parser<sub_rule> sub_parser;
-        auto next = sub_parser.parse(pos, end);
-        return recursive_sub_parse(
-                values,
-                next.position, end,
-                std::index_sequence<RuleInds...>(),
-                std::index_sequence<>());
+        auto result = sub_parser.parse(pos, end);
+        if (is_success(result))
+        {
+            auto [value, next] = get_success(result);
+            static_assert(std::is_same_v<decltype(value), none>);
+            return recursive_sub_parse(
+                    values,
+                    next, end,
+                    std::index_sequence<RuleInds...>(),
+                    std::index_sequence<>());
+        }
+        else
+        {
+            return std::move(get_failure(result));
+        }
     }
 
     template
         < size_t RuleIdx, size_t... RuleInds
         , size_t AttrIdx, size_t... AttrInds
         >
-    std::vector<token>::const_iterator
+    result_type
     recursive_sub_parse(
             attribute_type& values,
             const std::vector<token>::const_iterator pos,
@@ -64,35 +74,65 @@ struct parser<sequence<Ts...>>
         auto result = sub_parser.parse(pos, end);
         if constexpr (!std::is_same_v<attribute_of_t<sub_rule>, none>)
         {
-            std::get<AttrIdx>(values) = std::move(result.value);
-            return recursive_sub_parse(
-                    values,
-                    result.position, end,
-                    std::index_sequence<RuleInds...>(),
-                    std::index_sequence<AttrInds...>());
+            if (is_success(result))
+            {
+                auto [value, next] = get_success(result);
+                std::get<AttrIdx>(values) = std::move(value);
+                return recursive_sub_parse(
+                        values,
+                        next, end,
+                        std::index_sequence<RuleInds...>(),
+                        std::index_sequence<AttrInds...>());
+            }
+            else
+            {
+                return std::move(get_failure(result));
+            }
         }
         else
         {
-            return recursive_sub_parse(
-                    values,
-                    result.position, end,
-                    std::index_sequence<RuleInds...>(),
-                    std::index_sequence<AttrIdx, AttrInds...>());
+            if (is_success(result))
+            {
+                auto [value, next] = get_success(result);
+                static_cast<void>(value);
+                return recursive_sub_parse(
+                        values,
+                        next, end,
+                        std::index_sequence<RuleInds...>(),
+                        std::index_sequence<AttrIdx, AttrInds...>());
+            }
+            else
+            {
+                return std::move(get_failure(result));
+            }
         }
     }
 
-    parser_result<attribute_type>
+    result_type
     parse(std::vector<token>::const_iterator pos,
           std::vector<token>::const_iterator end) const
     {
-        parser_result<attribute_type> result;
-        result.position =
+        parser_success<attribute_type> success;
+        auto result =
             recursive_sub_parse(
-                result.value,
+                success.value,
                 pos, end,
                 std::make_index_sequence<sizeof...(Ts)>(),
                 std::make_index_sequence<std::tuple_size_v<attribute_type>>());
-        return result;
+        if (is_success(result))
+        {
+            return result;
+        }
+        else
+        {
+            auto& sub_failure = get_failure(result);
+            sub_failure.previous =
+                std::make_unique<parser_failure>(parser_failure{
+                    "While parsing sequence",
+                    pos->context,
+                });
+            return std::move(sub_failure);
+        }
     }
 };
 

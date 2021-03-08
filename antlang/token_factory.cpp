@@ -1,6 +1,7 @@
 #include "token_factory.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <sstream>
 #include <utility>
 
@@ -25,7 +26,7 @@ make_alternation_pattern(std::vector<std::string> const& sub_patterns)
     return pattern.str();
 }
 
-} // detail
+} // namespace detail
 
 token_factory::token_factory(std::vector<std::unique_ptr<token_builder>>&& builders)
     : builders(std::move(builders))
@@ -41,12 +42,7 @@ token_factory::size() const
 token_variant
 token_factory::create(size_t index, std::string const& data) const
 {
-    if (index >= builders.size())
-    {
-        std::stringstream message;
-        message << "Can not create token for token index: " << index;
-        throw std::runtime_error(message.str());
-    }
+    assert(index < size());
     auto const & builder = builders.at(index);
     return builder->build(data);
 }

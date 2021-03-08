@@ -17,7 +17,17 @@ struct parser<discard<T>>
           std::vector<token>::const_iterator end) const
     {
         const auto parser = make_parser<T>();
-        return {none{}, parser.parse(pos,end).position};
+        auto result = parser.parse(pos, end);
+        if (is_success(result))
+        {
+            const auto [value, next] = get_success(result);
+            static_cast<void>(value); // a.k.a. discard
+            return parser_success<none>{none{}, next};
+        }
+        else
+        {
+            return std::move(get_failure(result));
+        }
     }
 };
 

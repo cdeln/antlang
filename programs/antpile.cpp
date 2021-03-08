@@ -27,6 +27,70 @@ read_file(std::string const& filename)
         std::istreambuf_iterator<char>());
 }
 
+struct error_handler
+{
+    std::vector<std::string> lines;
+
+    error_handler(std::vector<std::string> const& lines)
+        : lines(lines)
+    {
+    }
+
+    void handle(ant::exception const& error, int level = 0)
+    {
+        const int line_index = error.context.line - 1;
+        const std::string line = lines.at(line_index);
+        const int line_length = line.size();
+        const int pad_left = error.context.offset - 1;
+        const int pad_right = line_length - pad_left - 1;
+        std::cout << error.what();
+        std::cout << ", at line " << error.context.line
+                  << ", as seen in context here\n"
+                  << std::string(2*level, ' ') << line << "\n"
+                  << std::string(2*level, ' ') << std::string(pad_left, '~')
+                  << '^'
+                  << std::string(pad_right, '~') << "\n\n";
+        try
+        {
+            std::rethrow_if_nested(error);
+        }
+        catch (ant::exception const& nested)
+        {
+            handle(nested, level + 1);
+        }
+    }
+};
+
+struct failure_handler
+{
+    std::vector<std::string> lines;
+
+    failure_handler(std::vector<std::string> const& lines)
+        : lines(lines)
+    {
+    }
+
+    void handle(ant::parser_failure const& failure) const
+    {
+        const int line_index = failure.context.line - 1;
+        const std::string line = lines.at(line_index);
+        const int line_length = line.size();
+        const int pad_left = failure.context.offset - 1;
+        const int pad_right = line_length - pad_left - 1;
+        std::cout << failure.message
+                  << ", at line " << failure.context.line
+                  << ", as seen in context here\n"
+                  << line << "\n"
+                  << std::string(pad_left, '~')
+                  << '^'
+                  << std::string(pad_right, '~') << "\n\n";
+        if (failure.previous)
+        {
+            handle(*failure.previous);
+        }
+    }
+};
+
 int main(int argc, char** argv)
 {
     const int arg_count = argc - 1;
@@ -59,36 +123,22 @@ int main(int argc, char** argv)
             });
     }
 
-    for (auto token : tokens)
-    {
-        std::cout << std::setw(4) << token.context.line << " "
-                  << std::setw(4) << token.context.offset << " "
-                  << token_string(token.variant)
-                  << "\n";
-    }
+    // for (auto token : tokens)
+    // {
+    //     std::cout << std::setw(4) << token.context.line << " "
+    //               << std::setw(4) << token.context.offset << " "
+    //               << token_string(token.variant)
+    //               << "\n";
+    // }
 
     const auto parser =
         ant::make_parser<ant::ast::function>();
 
 
-    try
+    auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    if (is_failure(result))
     {
-        auto parsed = parser.parse(tokens.cbegin(), tokens.cend());
-    }
-    catch (ant::unexpected_token_error const& error)
-    {
-        const int line_index = error.context.line - 1;
-        const std::string line = lines.at(line_index);
-        const int line_length = line.size();
-        const int pad_left = error.context.offset - 1;
-        const int pad_right = line_length - pad_left - 1;
-        const std::string indent(4, ' ');
-        std::cout << error.what();
-        std::cout << ", as seen in context here\n"
-                  << indent << line << "\n"
-                  << indent << std::string(pad_left, '~')
-                  << '^'
-                  << std::string(pad_right, '~') << '\n';
+        failure_handler(lines).handle(get_failure(result));
     }
 
     return 0;

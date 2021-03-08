@@ -6,6 +6,7 @@
 #include "tokens.hpp"
 
 #include <functional>
+#include <sstream>
 #include <tuple>
 #include <utility>
 #include <variant>
@@ -42,8 +43,19 @@ struct parser<ast_rule<Attribute>>
           std::vector<token>::const_iterator end) const
     {
         const auto parser = make_parser<ast_rule<Attribute>>();
-        auto [value, next] = parser.parse(pos, end);
-        return {convert<Attribute>(std::move(value)), next};
+        auto result = parser.parse(pos, end);
+        if (is_success(result))
+        {
+            auto [value, next] = get_success(result);
+            return parser_success<attribute_type>{convert<Attribute>(std::move(value)), next};
+        }
+        else
+        {
+            std::stringstream message;
+            message << "While parsing " << ast::name_of_v<Attribute>;
+            auto sub_failure = std::make_unique<parser_failure>(std::move(get_failure(result)));
+            return parser_failure{message.str(), pos->context, std::move(sub_failure)};
+        }
     }
 };
 

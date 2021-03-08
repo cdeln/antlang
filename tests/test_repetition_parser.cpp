@@ -11,17 +11,21 @@ TEST_CASE("repetition parser parses zero non-attributed tokens")
 {
     const std::vector<token> tokens;
     const auto parser = make_parser<repetition<left_parenthesis_token>>();
-    const auto position = parser.parse(tokens.cbegin(), tokens.cend()).position;
-    CHECK(position == tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto pos = get_success(result).position;
+    CHECK(pos == tokens.cend());
 }
 
 TEST_CASE("repetition parser parses zero attributed tokens")
 {
     const std::vector<token> tokens;
     const auto parser = make_parser<repetition<identifier_token>>();
-    const auto [values, position] = parser.parse(tokens.cbegin(), tokens.cend());
-    CHECK(position == tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [values, position] = get_success(result);
     CHECK(values.size() == 0);
+    CHECK(position == tokens.cend());
 }
 
 TEST_CASE("repetition parser parses multiple non-attributed tokens")
@@ -35,7 +39,9 @@ TEST_CASE("repetition parser parses multiple non-attributed tokens")
         tokens.push_back({identifier_token{name.str()}, {}});
     }
     const auto parser = make_parser<repetition<identifier_token>>();
-    const auto [values, position] = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [values, position] = get_success(result);
     CHECK(position == tokens.cend());
     REQUIRE(values.size() == 100);
     for (int i = 0; i < 100; ++i)
@@ -57,9 +63,11 @@ TEST_CASE("repetition parser parses multiple attributed tokens")
         tokens.push_back({identifier_token{name.str()}, {}});
     }
     const auto parser = make_parser<repetition<identifier_token>>();
-    const auto [values, position] = parser.parse(tokens.cbegin(), tokens.cend());
-    CHECK(position == tokens.cend());
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [values, position] = get_success(result);
     REQUIRE(values.size() == 100);
+    CHECK(position == tokens.cend());
     for (int i = 0; i < 100; ++i)
     {
         std::stringstream name;

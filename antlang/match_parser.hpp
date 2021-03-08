@@ -14,20 +14,33 @@ namespace ant
 template <class Value, class Pattern>
 struct parser<match<Value, Pattern>>
 {
-    parser_result<Value>
+    using attribute_type = attribute_of_t<rule_of_t<Value>>;
+
+    parser_result<attribute_type>
     parse(std::vector<token>::const_iterator pos,
           std::vector<token>::const_iterator end) const
     {
         const auto parser = make_parser<Value>();
-        const auto [value, next] = parser.parse(pos, end);
-        if (value != Pattern::value)
+        auto result = parser.parse(pos, end);
+        if (is_success(result))
         {
-            std::stringstream message;
-            message << "Value " << quote(value)
-                    << " did not match the expected pattern " << quote(Pattern::value);
-            throw literal_mismatch_error(message.str(), pos->context);
+            const auto [value, next] = get_success(result);
+            if (value == Pattern::value)
+            {
+                return parser_success<attribute_type>{value, next};
+            }
+            else
+            {
+                std::stringstream message;
+                message << "Value " << quote(value)
+                        << " did not match the expected pattern " << quote(Pattern::value);
+                return parser_failure{message.str(), pos->context, nullptr};
+            }
         }
-        return {value, next};
+        else
+        {
+            return std::move(get_failure(result));
+        }
     }
 };
 

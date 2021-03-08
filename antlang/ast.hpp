@@ -31,23 +31,6 @@ using u64 = literal<uint64_t>;
 using f32 = literal<flt32_t>;
 using f64 = literal<flt64_t>;
 
-template <class Literal>
-struct name_of;
-
-template <> struct name_of<i8>  { static constexpr auto const value = "i8"; };
-template <> struct name_of<i16> { static constexpr auto const value = "i16"; };
-template <> struct name_of<i32> { static constexpr auto const value = "i32"; };
-template <> struct name_of<i64> { static constexpr auto const value = "i64"; };
-template <> struct name_of<u8>  { static constexpr auto const value = "u8"; };
-template <> struct name_of<u16> { static constexpr auto const value = "u16"; };
-template <> struct name_of<u32> { static constexpr auto const value = "u32"; };
-template <> struct name_of<u64> { static constexpr auto const value = "u64"; };
-template <> struct name_of<f32> { static constexpr auto const value = "f32"; };
-template <> struct name_of<f64> { static constexpr auto const value = "f64"; };
-
-template <class Literal>
-constexpr auto const name_of_v = name_of<Literal>::value;
-
 using literal_variant =
     std::variant<
         i8, i16, i32, i64,
@@ -90,6 +73,30 @@ struct structure
     std::string name;
     std::vector<parameter> fields;
 };
+
+template <typename T>
+struct name_of;
+
+template <> struct name_of<i8>  { static constexpr auto const value = "i8"; };
+template <> struct name_of<i16> { static constexpr auto const value = "i16"; };
+template <> struct name_of<i32> { static constexpr auto const value = "i32"; };
+template <> struct name_of<i64> { static constexpr auto const value = "i64"; };
+template <> struct name_of<u8>  { static constexpr auto const value = "u8"; };
+template <> struct name_of<u16> { static constexpr auto const value = "u16"; };
+template <> struct name_of<u32> { static constexpr auto const value = "u32"; };
+template <> struct name_of<u64> { static constexpr auto const value = "u64"; };
+template <> struct name_of<f32> { static constexpr auto const value = "f32"; };
+template <> struct name_of<f64> { static constexpr auto const value = "f64"; };
+
+template <> struct name_of<literal_variant> { static constexpr auto value = "literal";    };
+template <> struct name_of<parameter>       { static constexpr auto value = "parameter";  };
+template <> struct name_of<evaluation>      { static constexpr auto value = "evaluation"; };
+template <> struct name_of<expression>      { static constexpr auto value = "expression"; };
+template <> struct name_of<function>        { static constexpr auto value = "function";   };
+template <> struct name_of<structure>       { static constexpr auto value = "structure";  };
+
+template <typename T>
+constexpr auto name_of_v = name_of<T>::value;
 
 } // namespace ast
 } // namespace ant
