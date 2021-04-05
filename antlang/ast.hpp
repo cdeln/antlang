@@ -75,7 +75,10 @@ struct structure
 };
 
 template <typename T>
-struct name_of;
+struct name_of
+{
+    static constexpr auto const value = T::name;
+};
 
 template <> struct name_of<i8>  { static constexpr auto const value = "i8"; };
 template <> struct name_of<i16> { static constexpr auto const value = "i16"; };

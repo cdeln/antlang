@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast_rules.hpp"
+#include "formatting.hpp"
 #include "parser.hpp"
 #include "parser_result.hpp"
 #include "tokens.hpp"
@@ -52,11 +53,11 @@ struct parser<ast_rule<Attribute>>
         else
         {
             std::stringstream message;
-            message << "While parsing " << ast::name_of_v<Attribute>;
+            message << "Failed to parse " << quote(ast::name_of_v<Attribute>);
             return parser_failure{
                 message.str(),
                 pos->context,
-                std::make_unique<parser_failure>(std::move(get_failure(result)))
+                {std::move(get_failure(result))}
             };
         }
     }

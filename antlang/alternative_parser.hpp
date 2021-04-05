@@ -2,6 +2,7 @@
 
 #include "alternative.hpp"
 #include "exceptions.hpp"
+#include "formatting.hpp"
 #include "parser.hpp"
 #include "type_filters.hpp"
 
@@ -50,9 +51,8 @@ struct parser<alternative<Ts...>>
             }
             else
             {
-                auto& failure = get_failure(result);
                 auto& sub_failure = get_failure(sub_result);
-                sub_failure.previous = std::make_unique<parser_failure>(std::move(failure));
+                sub_failure.children.push_back(std::move(get_failure(result)));
                 return std::move(sub_failure);
             }
         }
@@ -61,8 +61,32 @@ struct parser<alternative<Ts...>>
     result_type
     parse(std::vector<token>::const_iterator pos,
           std::vector<token>::const_iterator end) const
-   {
-        return recursive_sub_parse(std::make_index_sequence<sizeof...(Ts)>(), pos, end);
+    {
+        auto result = recursive_sub_parse(std::make_index_sequence<sizeof...(Ts)>(), pos, end);
+        if (is_failure(result))
+        {
+            auto& failure = get_failure(result);
+            std::stringstream message;
+            message << "Exhausted all alternatives, tried parsing";
+            std::vector<std::string> alternative_names = {ast::name_of_v<Ts>...};
+            if (!alternative_names.empty())
+            {
+                for (size_t i = 0; i < alternative_names.size() - 1; ++i)
+                {
+                    message << " " << quote(alternative_names[i]) << ",";
+                }
+                message << " and " << quote(alternative_names.back());
+            }
+            // reverse the children, since they are pushed back int last to first rule order.
+            std::vector<parser_failure> failures(
+                failure.children.rbegin(), failure.children.rend());
+            return parser_failure{
+                message.str(),
+                pos->context,
+                std::move(failures)
+            };
+        }
+        return result;
     }
 };
 

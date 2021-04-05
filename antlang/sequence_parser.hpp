@@ -113,24 +113,11 @@ struct parser<sequence<Ts...>>
           std::vector<token>::const_iterator end) const
     {
         parser_success<attribute_type> success;
-        auto result =
-            recursive_sub_parse(
+        return recursive_sub_parse(
                 success.value,
                 pos, end,
                 std::make_index_sequence<sizeof...(Ts)>(),
                 std::make_index_sequence<std::tuple_size_v<attribute_type>>());
-        if (is_success(result))
-        {
-            return result;
-        }
-        else
-        {
-            return parser_failure{
-                "While parsing sequence",
-                pos->context,
-                std::make_unique<parser_failure>(std::move(get_failure(result)))
-            };
-        }
     }
 };
 

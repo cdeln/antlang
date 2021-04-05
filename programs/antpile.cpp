@@ -29,30 +29,35 @@ read_file(std::string const& filename)
 
 struct failure_handler
 {
+    std::string file_name;
     std::vector<std::string> lines;
 
-    failure_handler(std::vector<std::string> const& lines)
-        : lines(lines)
+    failure_handler(std::string const& file_name, std::vector<std::string> const& lines)
+        : file_name{file_name}
+        , lines(lines)
     {
     }
 
     void handle(ant::parser_failure const& failure) const
     {
-        const int line_index = failure.context.line - 1;
-        const std::string line = lines.at(line_index);
-        const int line_length = line.size();
-        const int pad_left = failure.context.offset - 1;
-        const int pad_right = line_length - pad_left - 1;
-        std::cout << failure.message
-                  << ", at line " << failure.context.line
-                  << ", as seen in context here\n"
-                  << line << "\n"
-                  << std::string(pad_left, '~')
-                  << '^'
-                  << std::string(pad_right, '~') << "\n\n";
-        if (failure.previous)
+        std::cout << file_name << ":" << failure.context.line << ": " << failure.message;
+        if (failure.children.empty())
         {
-            handle(*failure.previous);
+            const auto context = failure.context;
+            const int line_index = context.line - 1;
+            const std::string line = lines.at(line_index);
+            const int line_length = line.size();
+            const int pad_left = context.offset - 1;
+            const int pad_right = line_length - pad_left - 1;
+            std::cout << '\n' << line << '\n'
+                      << std::string(pad_left, '~')
+                      << '^'
+                      << std::string(pad_right, '~') << '\n';
+        }
+        std::cout << '\n';
+        for (auto const& sub_failure : failure.children)
+        {
+            handle(sub_failure);
         }
     }
 };
@@ -89,22 +94,13 @@ int main(int argc, char** argv)
             });
     }
 
-    // for (auto token : tokens)
-    // {
-    //     std::cout << std::setw(4) << token.context.line << " "
-    //               << std::setw(4) << token.context.offset << " "
-    //               << token_string(token.variant)
-    //               << "\n";
-    // }
-
     const auto parser =
         ant::make_parser<ant::ast::function>();
-
 
     auto result = parser.parse(tokens.cbegin(), tokens.cend());
     if (is_failure(result))
     {
-        failure_handler(lines).handle(get_failure(result));
+        failure_handler(input_file, lines).handle(get_failure(result));
     }
 
     return 0;

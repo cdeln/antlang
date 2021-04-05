@@ -2,7 +2,6 @@
 
 #include "tokens.hpp"
 
-#include <memory>
 #include <variant>
 #include <vector>
 
@@ -20,7 +19,7 @@ struct parser_failure
 {
     std::string message;
     token_context context;
-    std::unique_ptr<parser_failure> previous;
+    std::vector<parser_failure> children;
 };
 
 template <typename Attribute>
