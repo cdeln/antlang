@@ -94,10 +94,18 @@ int main(int argc, char** argv)
             });
     }
 
+    tokens.push_back({ant::end_of_input_token(), {}});
+
     const auto parser =
-        ant::make_parser<ant::ast::function>();
+        ant::make_parser<
+            ant::repetition<
+                ant::ast::statement,
+                ant::end_of_input_token
+            >
+        >();
 
     auto result = parser.parse(tokens.cbegin(), tokens.cend());
+
     if (is_failure(result))
     {
         failure_handler(input_file, lines).handle(get_failure(result));

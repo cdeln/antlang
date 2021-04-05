@@ -94,8 +94,9 @@ template class token_alternative_builder<left_parenthesis_token>;
 template class token_alternative_builder<right_parenthesis_token>;
 template class token_alternative_builder<function_token>;
 template class token_alternative_builder<structure_token>;
-template class token_alternative_builder<identifier_token>;
 template class token_alternative_builder<integer_literal_token>;
 template class token_alternative_builder<floating_point_literal_token>;
+template class token_alternative_builder<identifier_token>;
+template class token_alternative_builder<end_of_input_token>;
 
 } // namespace ant

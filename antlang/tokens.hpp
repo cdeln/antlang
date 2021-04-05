@@ -51,15 +51,22 @@ struct identifier_token
     std::string value;
 };
 
+struct end_of_input_token
+{
+    static constexpr char name[] = "end-of-input";
+    static constexpr char pattern[] = "";
+};
+
 using token_variant =
-  std::variant
-    < left_parenthesis_token
-    , right_parenthesis_token
-    , function_token
-    , structure_token
-    , floating_point_literal_token
-    , integer_literal_token
-    , identifier_token
+    std::variant<
+        left_parenthesis_token,
+        right_parenthesis_token,
+        function_token,
+        structure_token,
+        floating_point_literal_token,
+        integer_literal_token,
+        identifier_token,
+        end_of_input_token
     >;
 
 struct token_context
