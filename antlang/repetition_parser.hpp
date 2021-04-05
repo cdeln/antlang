@@ -9,8 +9,8 @@
 namespace ant
 {
 
-template <typename T>
-struct parser<repetition<T>>
+template <typename T, typename End>
+struct parser<repetition<T, End>>
 {
     using attribute_type = attribute_of_t<repetition<T>>;
 
@@ -19,9 +19,22 @@ struct parser<repetition<T>>
           std::vector<token>::const_iterator end) const
     {
         parser_success<attribute_type> result;
+        bool parsed_end = false;
+
         while (pos != end)
         {
-            auto sub_parser = make_parser<T>();
+            const auto end_parser = make_parser<End>();
+            auto end_result = end_parser.parse(pos, end);
+            if (is_success(end_result))
+            {
+                auto [value, next] = get_success(end_result);
+                static_cast<void>(value);
+                pos = next;
+                parsed_end = true;
+                break;
+            }
+
+            const auto sub_parser = make_parser<T>();
             auto sub_result = sub_parser.parse(pos, end);
             if (is_success(sub_result))
             {
@@ -38,9 +51,17 @@ struct parser<repetition<T>>
             }
             else
             {
-                break;
+                return get_failure(sub_result);
             }
         }
+
+        if (!parsed_end)
+        {
+            return parser_failure{
+                "Unexpected end of input"
+            };
+        }
+
         result.position = pos;
         return result;
     }

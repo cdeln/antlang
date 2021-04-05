@@ -3,14 +3,17 @@
 #include "ast_rules.hpp"
 #include "ast_parser.hpp"
 
+#include <iostream>
+
 using namespace ant;
 
 TEST_CASE("can parse parameter")
 {
     const std::vector<token> tokens =
-      { {identifier_token{"type"}}
-      , {identifier_token{"name"}}
-      };
+    {
+        {identifier_token{"type"}},
+        {identifier_token{"name"}}
+    };
     const auto parser = make_parser<ast::parameter>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));
@@ -22,7 +25,8 @@ TEST_CASE("can parse parameter")
 
 TEST_CASE("can parse function")
 {
-    const std::vector<token> tokens = {
+    const std::vector<token> tokens =
+    {
         {left_parenthesis_token{}},
             {function_token{}},
             {identifier_token{"function-name"}},
@@ -33,11 +37,15 @@ TEST_CASE("can parse function")
             {identifier_token{"parameter-name"}},
             {right_parenthesis_token{}},
 
-            {identifier_token{"paramter-name"}},
+            {identifier_token{"parameter-name"}},
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::function>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    if (!is_success(result))
+    {
+        FAIL(get_failure(result).message);
+    }
     REQUIRE(is_success(result));
     const auto [function, pos] = get_success(result);
     CHECK(function.name == "function-name");
@@ -50,7 +58,8 @@ TEST_CASE("can parse function")
 
 TEST_CASE("can parse structure")
 {
-    const std::vector<token> tokens = {
+    const std::vector<token> tokens =
+    {
         {left_parenthesis_token{}},
         {structure_token{}},
         {identifier_token{"structure-name"}},
@@ -320,4 +329,40 @@ TEST_CASE("can parse evaluation expression")
     REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(1)));
     const auto name  = std::get<std::string>(eval.arguments.at(1));
     CHECK(name == "my-argument");
+}
+
+TEST_CASE("can parse nested evaluation expression")
+{
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+            {identifier_token{"my-function"}},
+
+            {left_parenthesis_token{}},
+                {identifier_token{"i32"}},
+                {integer_literal_token{"1337"}},
+            {right_parenthesis_token{}},
+
+            {left_parenthesis_token{}},
+                {identifier_token{"my-nested-function"}},
+            {right_parenthesis_token{}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::expression>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [expr, pos] = get_success(result);
+    CHECK(pos == tokens.cend());
+    REQUIRE(std::holds_alternative<ast::evaluation>(expr));
+    const auto eval = std::get<ast::evaluation>(expr);
+    CHECK(eval.function == "my-function");
+    REQUIRE(eval.arguments.size() == 2);
+    REQUIRE(std::holds_alternative<ast::literal_variant>(eval.arguments.at(0)));
+    const auto variant = std::get<ast::literal_variant>(eval.arguments.at(0));
+    REQUIRE(std::holds_alternative<ast::i32>(variant));
+    const auto literal = std::get<ast::i32>(variant);
+    CHECK(literal.value == 1337);
+    REQUIRE(std::holds_alternative<ast::evaluation>(eval.arguments.at(1)));
+    const auto nested = std::get<ast::evaluation>(eval.arguments.at(1));
+    CHECK(nested.function == "my-nested-function");
+    CHECK(nested.arguments.empty());
 }

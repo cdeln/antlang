@@ -7,9 +7,9 @@
 
 using namespace ant;
 
-TEST_CASE("repetition parser parses zero non-attributed tokens")
+TEST_CASE("repetition parser parses zero non-attributed tokens plus end rule")
 {
-    const std::vector<token> tokens;
+    const std::vector<token> tokens = {{right_parenthesis_token{}}};
     const auto parser = make_parser<repetition<left_parenthesis_token>>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));
@@ -17,9 +17,9 @@ TEST_CASE("repetition parser parses zero non-attributed tokens")
     CHECK(pos == tokens.cend());
 }
 
-TEST_CASE("repetition parser parses zero attributed tokens")
+TEST_CASE("repetition parser parses zero attributed tokens plus end rule")
 {
-    const std::vector<token> tokens;
+    const std::vector<token> tokens = {{right_parenthesis_token{}}};
     const auto parser = make_parser<repetition<identifier_token>>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));
@@ -38,6 +38,7 @@ TEST_CASE("repetition parser parses multiple non-attributed tokens")
         name << i;
         tokens.push_back({identifier_token{name.str()}, {}});
     }
+    tokens.push_back({right_parenthesis_token{}});
     const auto parser = make_parser<repetition<identifier_token>>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));
@@ -62,6 +63,7 @@ TEST_CASE("repetition parser parses multiple attributed tokens")
         name << i;
         tokens.push_back({identifier_token{name.str()}, {}});
     }
+    tokens.push_back({right_parenthesis_token{}});
     const auto parser = make_parser<repetition<identifier_token>>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));

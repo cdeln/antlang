@@ -63,8 +63,10 @@ struct ast_rule<ast::function> :
             identifier_token,
             identifier_token,
             left_parenthesis_token,
-            repetition<ast::parameter>,
-            right_parenthesis_token,
+            repetition<
+                ast::parameter,
+                right_parenthesis_token
+            >,
             ast::expression,
             right_parenthesis_token
         >,
@@ -86,8 +88,10 @@ struct ast_rule<ast::structure> :
             structure_token,
             identifier_token,
             left_parenthesis_token,
-            repetition<ast::parameter>,
-            right_parenthesis_token,
+            repetition<
+                ast::parameter,
+                right_parenthesis_token
+            >,
             right_parenthesis_token
         >,
         ast::structure
@@ -169,8 +173,10 @@ struct ast_rule<ast::evaluation> :
         sequence<
             left_parenthesis_token,
             identifier_token,
-            repetition<ast::expression>,
-            right_parenthesis_token
+            repetition<
+                ast::expression,
+                right_parenthesis_token
+            >
         >,
         ast::evaluation
     >
