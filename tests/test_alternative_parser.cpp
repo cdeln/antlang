@@ -31,7 +31,7 @@ TEST_CASE("can parse alternative expression")
     }
 }
 
-TEST_CASE("alternative parser raises error on non-existing alternative")
+TEST_CASE("alternative parser returns failure on non-existing alternative")
 {
     const auto parser = make_parser<alternative<left_parenthesis_token, identifier_token>>();
     const std::vector<token> tokens = {{right_parenthesis_token{}}};

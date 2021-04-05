@@ -77,3 +77,14 @@ TEST_CASE("repetition parser parses multiple attributed tokens")
         CHECK(values.at(i) == name.str());
     }
 }
+
+TEST_CASE("repetition parser returns failure if terminal pattern is not found before end of input")
+{
+    const std::vector<token> tokens =
+    {
+        {left_parenthesis_token{}}
+    };
+    const auto parser = make_parser<repetition<left_parenthesis_token, right_parenthesis_token>>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_failure(result));
+}

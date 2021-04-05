@@ -63,10 +63,8 @@ TEST_CASE("can parse structure")
         {left_parenthesis_token{}},
         {structure_token{}},
         {identifier_token{"structure-name"}},
-        {left_parenthesis_token{}},
         {identifier_token{"field-type"}},
         {identifier_token{"field-name"}},
-        {right_parenthesis_token{}},
         {right_parenthesis_token{}}
     };
     const auto parser = make_parser<ast::structure>();

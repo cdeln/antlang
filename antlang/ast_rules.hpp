@@ -87,12 +87,10 @@ struct ast_rule<ast::structure> :
             left_parenthesis_token,
             structure_token,
             identifier_token,
-            left_parenthesis_token,
             repetition<
                 ast::parameter,
                 right_parenthesis_token
-            >,
-            right_parenthesis_token
+            >
         >,
         ast::structure
     >
@@ -186,6 +184,23 @@ template <>
 struct rule_of<ast::evaluation>
 {
     using type = ast_rule<ast::evaluation>;
+};
+
+template <>
+struct ast_rule<ast::statement> :
+    rule_spec<
+        alternative<
+            ast::function,
+            ast::structure
+        >,
+        ast::statement
+    >
+{};
+
+template <>
+struct rule_of<ast::statement>
+{
+    using type = ast_rule<ast::statement>;
 };
 
 } // namespace ant

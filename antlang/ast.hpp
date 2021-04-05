@@ -74,6 +74,12 @@ struct structure
     std::vector<parameter> fields;
 };
 
+using statement =
+    std::variant<
+        function,
+        structure
+    >;
+
 template <typename T>
 struct name_of
 {
@@ -97,6 +103,7 @@ template <> struct name_of<evaluation>      { static constexpr auto value = "eva
 template <> struct name_of<expression>      { static constexpr auto value = "expression"; };
 template <> struct name_of<function>        { static constexpr auto value = "function";   };
 template <> struct name_of<structure>       { static constexpr auto value = "structure";  };
+template <> struct name_of<statement>       { static constexpr auto value = "statement";  };
 
 template <typename T>
 constexpr auto name_of_v = name_of<T>::value;

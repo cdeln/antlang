@@ -58,7 +58,7 @@ struct parser<repetition<T, End>>
         if (!parsed_end)
         {
             return parser_failure{
-                "Unexpected end of input"
+                "Unexpected end of input while parsing repetition"
             };
         }
 
