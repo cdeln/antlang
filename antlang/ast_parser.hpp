@@ -16,10 +16,10 @@
 namespace ant
 {
 
-template <typename T>
-T convert(T&& x)
+template <typename Target, typename Source>
+Target convert(Source&& x)
 {
-    return std::move(x);
+    return Target(std::forward<Source>(x));
 }
 
 template <typename Struct, typename... Ts, size_t... Is>

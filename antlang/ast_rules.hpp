@@ -190,6 +190,7 @@ template <>
 struct ast_rule<ast::statement> :
     rule_spec<
         alternative<
+            ast::evaluation,
             ast::function,
             ast::structure
         >,
@@ -201,6 +202,23 @@ template <>
 struct rule_of<ast::statement>
 {
     using type = ast_rule<ast::statement>;
+};
+
+template <>
+struct ast_rule<ast::program> :
+    rule_spec<
+        repetition<
+            ast::statement,
+            end_of_input_token
+        >,
+        ast::program
+    >
+{};
+
+template <>
+struct rule_of<ast::program>
+{
+    using type = ast_rule<ast::program>;
 };
 
 } // namespace ant

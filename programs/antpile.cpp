@@ -1,3 +1,4 @@
+#include "compiler.hpp"
 #include "formatting.hpp"
 #include "tokenizer.hpp"
 #include "parser.hpp"
@@ -96,13 +97,7 @@ int main(int argc, char** argv)
 
     tokens.push_back({ant::end_of_input_token(), {}});
 
-    const auto parser =
-        ant::make_parser<
-            ant::repetition<
-                ant::ast::statement,
-                ant::end_of_input_token
-            >
-        >();
+    const auto parser = ant::make_parser<ant::ast::program>();
 
     const auto ast = parser.parse(tokens.cbegin(), tokens.cend());
 
