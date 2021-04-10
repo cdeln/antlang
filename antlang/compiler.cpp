@@ -20,7 +20,11 @@ bool is_failure(compiler_result<T> const& result)
 }
 
 template bool is_success(compiler_result<runtime::value_variant> const&);
+
 template bool is_failure(compiler_result<runtime::value_variant> const&);
+template bool is_failure(compiler_result<runtime::value_variant*> const&);
+template bool is_failure(compiler_result<std::unique_ptr<runtime::evaluation>> const&);
+template bool is_failure(compiler_result<std::unique_ptr<runtime::function>> const&);
 
 template <typename T>
 T& get_success(compiler_result<T>& result)
@@ -46,96 +50,6 @@ compiler_failure const& get_failure(compiler_result<T> const& result)
     return std::get<compiler_failure>(result);
 }
 
-compiler_result<runtime::value_variant>
-compile(compiler_environment const& env, ast::parameter const& param)
-{
-    auto it = env.functions.find(param.type);
-    if (it == env.functions.end())
-    {
-        std::stringstream message;
-        message << "Undefined parameter type " << quote(param.type);
-        return compiler_failure{message.str()};
-    }
-    return runtime::value_variant{};
-}
-
-compiler_result<std::unique_ptr<runtime::function>>
-compile(compiler_environment const& env, ast::function const& function)
-{
-    auto it = env.functions.find(function.name);
-    if (it != env.functions.end())
-    {
-        std::stringstream message;
-        message << "Redefinition of function " << quote(function.name);
-        return compiler_failure{message.str()};
-    }
-    it = env.functions.find(function.return_type);
-    if (it != env.functions.end())
-    {
-        std::stringstream message;
-        message << "Unknown function return type " << quote(function.return_type);
-        return compiler_failure{message.str()};
-    }
-    auto result = std::make_unique<runtime::function>();
-    result->parameters.reserve(function.parameters.size());
-    for (const auto& param : function.parameters)
-    {
-        auto compiled_param = compile(env, param);
-        if (is_success(compiled_param))
-        {
-            result->parameters.push_back(std::move(get_success(compiled_param)));
-        }
-        else
-        {
-            return std::move(get_failure(compiled_param));
-        }
-    }
-
-    compiler_scope scope;
-    for (size_t i = 0; i < result->parameters.size(); ++i)
-    {
-        scope.variables.at(function.parameters.at(i).name) = &result->parameters.at(i);
-    }
-
-    auto compiled_value = compile(env, scope, function.body);
-    if (is_success(compiled_value))
-    {
-        result->value = std::move(get_success(compiled_value));
-    }
-    else
-    {
-        return std::move(get_failure(compiled_value));
-    }
-    return std::move(result);
-}
-
-compiler_result<std::unique_ptr<runtime::function>>
-compile(compiler_environment const& env, ast::structure  const& structure)
-{
-    return compiler_failure{"structure"};
-}
-
-compiler_result<std::unique_ptr<runtime::evaluation>>
-compile(compiler_environment const& env,
-        compiler_scope const& scope,
-        ast::evaluation const& eval)
-{
-    return compiler_failure{"evaluation"};
-}
-
-compiler_result<runtime::value_variant*>
-compile(compiler_scope const& scope, ast::reference const& ref)
-{
-    auto var = scope.variables.find(ref);
-    if (var == scope.variables.end())
-    {
-        std::stringstream message;
-        message << "Undefined reference to " << quote(ref);
-        return compiler_failure{message.str()};
-    }
-    return var->second;
-}
-
 struct literal_compiler
 {
     template <typename T>
@@ -146,9 +60,129 @@ struct literal_compiler
 };
 
 runtime::value_variant
-compile(ast::literal_variant const& lit)
+compile(ast::literal_variant const& value)
 {
-    return std::visit(literal_compiler(), lit);
+    return std::visit(literal_compiler(), value);
+}
+
+compiler_result<runtime::value_variant>
+compile(compiler_environment const& env, ast::parameter const& param)
+{
+    auto it = env.functions.find(param.type);
+    if (it == env.functions.end())
+    {
+        std::stringstream message;
+        message << "Undefined parameter type " << quote(param.type);
+        return compiler_failure{message.str()};
+    }
+    runtime::function* type = it->second;
+    return get_evaluation_prototype(type->value);
+}
+
+compiler_result<runtime::value_variant*>
+compile(compiler_scope const& scope, ast::reference const& ref)
+{
+    auto param = scope.parameters.find(ref);
+    if (param == scope.parameters.end())
+    {
+        std::stringstream message;
+        message << "Undefined reference to " << quote(ref);
+        return compiler_failure{message.str()};
+    }
+    return param->second;
+}
+
+struct expression_prototype_getter
+{
+    runtime::value_variant operator()(runtime::value_variant const& value) const
+    {
+        return value;
+    }
+
+    runtime::value_variant operator()(runtime::value_variant const* param) const
+    {
+        return *param;
+    }
+
+    runtime::value_variant operator()(std::unique_ptr<runtime::evaluation> const& eval) const
+    {
+        return get_evaluation_prototype(eval->blueprint->value);
+    }
+};
+
+runtime::value_variant
+get_evaluation_prototype(runtime::expression const& expr)
+{
+    return std::visit(expression_prototype_getter(),
+                      static_cast<runtime::expression_base const&>(expr));
+}
+
+struct is_same_visitor
+{
+    template <typename A, typename B>
+    constexpr bool operator()(A const&, B const&) noexcept
+    {
+        return std::is_same_v<A, B>;
+    }
+};
+
+bool expression_type_matches(
+    runtime::expression const& expr1,
+    runtime::expression const& expr2)
+{
+    const runtime::value_variant proto1 = get_evaluation_prototype(expr1);
+    const runtime::value_variant proto2 = get_evaluation_prototype(expr2);
+    return proto1.index() == proto2.index();
+}
+
+compiler_result<std::unique_ptr<runtime::evaluation>>
+compile(compiler_environment const& env,
+        compiler_scope const& scope,
+        ast::evaluation const& eval)
+{
+    auto it = env.functions.find(eval.function);
+
+    if (it == env.functions.end())
+    {
+        std::stringstream message;
+        message << "Call to undefined function " << quote(eval.function);
+        return compiler_failure{message.str()};
+    }
+
+    runtime::function* func = it->second;
+
+    if (eval.arguments.size() != func->parameters.size())
+    {
+        std::stringstream message;
+        message << "Function call argument length does not match function parameter length";
+        return compiler_failure{message.str()};
+    }
+
+    auto result = std::make_unique<runtime::evaluation>(*func);
+
+    for (size_t i = 0; i < eval.arguments.size(); ++i)
+    {
+        compiler_result<runtime::expression> expr = compile(env, scope, eval.arguments.at(i));
+        if (is_success(expr))
+        {
+            runtime::expression& argument = get_success(expr);
+            runtime::expression const& parameter = func->parameters.at(i);
+            if (expression_type_matches(argument, parameter))
+            {
+                result->arguments.at(i) = std::move(argument);
+            }
+            else
+            {
+                return compiler_failure{"Function call argument/parameter type mismatch"};
+            }
+        }
+        else
+        {
+            return std::move(get_failure(expr));
+        }
+    }
+
+    return std::move(result);
 }
 
 struct expression_compiler
@@ -196,8 +230,79 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::expression const& expr)
 {
-    std::visit(expression_compiler{env, scope}, expr);
-    return compiler_failure{"expression"};
+    return std::visit(expression_compiler{env, scope}, expr);
+}
+
+compiler_result<std::unique_ptr<runtime::function>>
+compile(compiler_environment const& env, ast::function const& function)
+{
+    auto it = env.functions.find(function.name);
+
+    if (it != env.functions.end())
+    {
+        std::stringstream message;
+        message << "Redefinition of function " << quote(function.name);
+        return compiler_failure{message.str()};
+    }
+
+    it = env.functions.find(function.return_type);
+
+    if (it == env.functions.end())
+    {
+        std::stringstream message;
+        message << "Unknown function return type " << quote(function.return_type);
+        return compiler_failure{message.str()};
+    }
+
+    runtime::function const* return_type = it->second;
+
+    auto result = std::make_unique<runtime::function>();
+    result->parameters.reserve(function.parameters.size());
+
+    for (const auto& param : function.parameters)
+    {
+        auto compiled_param = compile(env, param);
+        if (is_success(compiled_param))
+        {
+            result->parameters.push_back(std::move(get_success(compiled_param)));
+        }
+        else
+        {
+            return std::move(get_failure(compiled_param));
+        }
+    }
+
+    compiler_scope scope;
+
+    for (size_t i = 0; i < result->parameters.size(); ++i)
+    {
+        std::string param_name = function.parameters.at(i).name;
+        scope.parameters[param_name] = &result->parameters.at(i);
+    }
+
+    auto compiled_value = compile(env, scope, function.body);
+
+    if (is_success(compiled_value))
+    {
+        result->value = std::move(get_success(compiled_value));
+    }
+    else
+    {
+        return std::move(get_failure(compiled_value));
+    }
+
+    if (!expression_type_matches(result->value, return_type->value))
+    {
+        return compiler_failure{"Function expression type does not match declared return type"};
+    }
+
+    return std::move(result);
+}
+
+compiler_result<std::unique_ptr<runtime::function>>
+compile(compiler_environment const& env, ast::structure  const& structure)
+{
+    return compiler_failure{"structure"};
 }
 
 struct statement_compiler
