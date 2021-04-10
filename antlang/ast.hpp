@@ -46,9 +46,11 @@ struct parameter
 
 struct evaluation;
 
+using reference = std::string;
+
 using expression =
     std::variant<
-        std::string,
+        reference,
         literal_variant,
         evaluation
     >;
@@ -101,6 +103,7 @@ template <> struct name_of<f32> { static constexpr auto const value = "f32"; };
 template <> struct name_of<f64> { static constexpr auto const value = "f64"; };
 
 template <> struct name_of<literal_variant> { static constexpr auto value = "literal";    };
+template <> struct name_of<reference>       { static constexpr auto value = "reference";  };
 template <> struct name_of<parameter>       { static constexpr auto value = "parameter";  };
 template <> struct name_of<evaluation>      { static constexpr auto value = "evaluation"; };
 template <> struct name_of<expression>      { static constexpr auto value = "expression"; };

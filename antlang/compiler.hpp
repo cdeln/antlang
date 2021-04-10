@@ -33,130 +33,53 @@ using compiler_result =
     >;
 
 template <typename T>
-bool is_success(compiler_result<T> const& result)
-{
-    return std::holds_alternative<T>(result);
-}
+bool is_success(compiler_result<T> const& result);
 
 template <typename T>
-bool is_failure(compiler_result<T> const& result)
-{
-    return !is_success(result);
-}
+bool is_failure(compiler_result<T> const& result);
 
 template <typename T>
-T& get_success(compiler_result<T>& result)
-{
-    return std::get<T>(result);
-}
+T& get_success(compiler_result<T>& result);
 
 template <typename T>
-T const& get_success(compiler_result<T> const& result)
-{
-    return std::get<T>(result);
-}
-
-template <typename T>
-compiler_failure& get_failure(compiler_result<T>& result)
-{
-    return std::get<compiler_failure>(result);
-}
-
-template <typename T>
-compiler_failure const& get_success(compiler_result<T> const& result)
-{
-    return std::get<compiler_failure>(result);
-}
+compiler_failure& get_failure(compiler_result<T>& result);
 
 struct compiler_environment
 {
-    std::map<std::string, runtime::function*> functions;
-    std::map<std::string, runtime::structure*> structures;
+    std::map<std::string, runtime::function const*> functions;
+    std::map<std::string, runtime::structure const*> structures;
 };
+
+struct compiler_scope
+{
+    std::map<std::string, runtime::value_variant*> variables;
+};
+
+compiler_result<runtime::value_variant>
+compile(compiler_environment const& env, ast::parameter const& parameter);
+
+compiler_result<runtime::value_variant*>
+compile(compiler_scope const& scope, ast::reference const& ref);
 
 compiler_result<std::unique_ptr<runtime::function>>
 compile(compiler_environment const& env, ast::function const& function);
 
 compiler_result<std::unique_ptr<runtime::function>>
-compile(compiler_environment const& env, ast::structure  const& structure);
+compile(compiler_environment const& env, ast::structure const& structure);
 
-compiler_result<runtime::evaluation>
-compile(compiler_environment const& env, ast::evaluation const& eval);
+compiler_result<std::unique_ptr<runtime::evaluation>>
+compile(compiler_environment const& env,
+        compiler_scope const& scope,
+        ast::evaluation const& eval);
 
-struct statement_compiler
-{
-    compiler_environment& env;
-    runtime::program& program;
-
-    compiler_status operator()(ast::function const& function)
-    {
-        compiler_result<std::unique_ptr<runtime::function>> result = compile(env, function);
-        if (is_success(result))
-        {
-            std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
-            env.functions[function.name] = compiled.get();
-            program.functions.push_back(std::move(compiled));
-            return compiler_success{function.name};
-        }
-        else
-        {
-            return std::move(get_failure(result));
-        }
-    }
-
-    compiler_status operator()(ast::structure const& structure)
-    {
-        compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
-        if (is_success(result))
-        {
-            std::unique_ptr<runtime::function> constructor = std::move(get_success(result));
-            env.functions[structure.name] = constructor.get();
-            program.functions.push_back(std::move(constructor));
-            return compiler_success{structure.name};
-        }
-        else
-        {
-            return std::move(get_failure(result));
-        }
-    }
-
-    compiler_status operator()(ast::evaluation const& eval)
-    {
-        compiler_result<runtime::evaluation> result = compile(env, eval);
-        if (is_success(result))
-        {
-            program.evaluations.push_back(std::move(get_success(result)));
-            return compiler_success{};
-        }
-        else
-        {
-            return std::move(get_failure(result));
-        }
-    }
-};
+compiler_result<runtime::expression>
+compile(compiler_environment const& env,
+        compiler_scope const& scope,
+        ast::expression const& eval);
 
 std::vector<compiler_status>
 compile(runtime::program& result,
         compiler_environment& env,
-        ast::program const& statements)
-{
-    std::vector<compiler_status> summary;
-    summary.reserve(statements.size());
-    for (auto& statement : statements)
-    {
-        compiler_status status =
-            std::visit(
-                statement_compiler{env, result},
-                statement
-            );
-        summary.push_back(std::move(status));
-        if (is_failure(summary.back()))
-        {
-            break;
-        }
-    }
-    summary.shrink_to_fit();
-    return summary;
-}
+        ast::program const& statements);
 
 }  // namespace ant

@@ -34,9 +34,7 @@ TEST_CASE("execute structural value variant expression works as expected")
 TEST_CASE("execute function with value expression type")
 {
     function func;
-    value_variant value = static_cast<int32_t>(1337);
-    expression expr = value;
-    func.value = expr;
+    func.value = static_cast<int32_t>(1337);
 
     const value_variant result = execute(func.value);
 
@@ -48,9 +46,7 @@ TEST_CASE("execute function with parameter expression type")
 {
     function func;
     func.parameters.resize(1);
-    value_variant* param = &func.parameters.at(0);
-    expression expr = param;
-    func.value = expr;
+    func.value = &func.parameters.at(0);
 
     func.parameters.at(0) = static_cast<int32_t>(1337);
     const value_variant result = execute(func.value);
@@ -63,17 +59,14 @@ TEST_CASE("execute evaluation of function with parameter expression type")
 {
     function func;
     func.parameters.resize(1);
-    value_variant* param = &func.parameters.at(0);
-    expression param_expr = param;
-    func.value = param_expr;
+    func.value = &func.parameters.at(0);
 
     evaluation eval(func);
 
     REQUIRE(eval.arguments.size() == func.parameters.size());
 
     value_variant value = static_cast<int32_t>(1337);
-    expression arg_expr = value;
-    eval.arguments.at(0) = arg_expr;
+    eval.arguments.at(0) = value;
     const value_variant result = execute(eval);
 
     REQUIRE(std::holds_alternative<int32_t>(result));

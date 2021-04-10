@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fundamental_types.hpp"
+
 #include <algorithm>
 #include <cstdint>
 #include <memory>
@@ -11,9 +13,6 @@ namespace ant
 namespace runtime
 {
 
-using std::int32_t;
-using std::int64_t;
-
 struct value_variant;
 
 struct structure : std::vector<value_variant>
@@ -23,8 +22,9 @@ struct structure : std::vector<value_variant>
 
 using value_variant_base =
     std::variant<
-        int32_t,
-        int64_t,
+         int8_t,  int16_t,  int32_t,  int64_t,
+        uint8_t, uint16_t, uint32_t, uint64_t,
+        flt32_t, flt64_t,
         structure
     >;
 
@@ -35,12 +35,17 @@ struct value_variant : value_variant_base
 
 struct evaluation;
 
-using expression =
+using expression_base =
     std::variant<
         value_variant,
         value_variant*,
-        evaluation*
+        std::unique_ptr<evaluation>
     >;
+
+struct expression : expression_base
+{
+    using expression_base::expression_base;
+};
 
 struct function
 {
@@ -60,51 +65,15 @@ struct evaluation
     }
 };
 
-value_variant execute(evaluation& eval);
-
-value_variant execute(expression& expr);
-
-value_variant execute(evaluation& eval)
-{
-    auto* func = eval.blueprint;
-    auto& params = func->parameters;
-    auto& args = eval.arguments;
-    const auto backup = params;
-    auto exec_arg = [](auto& arg) { return execute(arg); };
-    std::transform(args.begin(), args.end(), params.begin(), exec_arg);
-    auto result = execute(func->value);
-    params = backup;
-    return result;
-}
-
-struct expression_executor
-{
-    value_variant operator()(value_variant& value) const
-    {
-        return value;
-    }
-
-    value_variant operator()(value_variant* value) const
-    {
-        return *value;
-    }
-
-    value_variant operator()(evaluation* eval) const
-    {
-        return execute(*eval);
-    }
-};
-
-value_variant execute(expression& expr)
-{
-    return std::visit(expression_executor(), expr);
-}
-
 struct program
 {
     std::vector<std::unique_ptr<function>> functions;
-    std::vector<evaluation> evaluations;
+    std::vector<std::unique_ptr<evaluation>> evaluations;
 };
+
+value_variant execute(evaluation& eval);
+
+value_variant execute(expression& expr);
 
 }  // namespace runtime
 }  // namespace ant
