@@ -13,11 +13,24 @@ namespace runtime
 using std::int32_t;
 using std::int64_t;
 
-using value_variant =
+struct value_variant;
+
+struct structure : std::vector<value_variant>
+{
+    using std::vector<value_variant>::vector;
+};
+
+using value_variant_base =
     std::variant<
         int32_t,
-        int64_t
+        int64_t,
+        structure
     >;
+
+struct value_variant : value_variant_base
+{
+    using value_variant_base::value_variant_base;
+};
 
 struct evaluation;
 

@@ -104,11 +104,11 @@ int main(int argc, char** argv)
             >
         >();
 
-    auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto ast = parser.parse(tokens.cbegin(), tokens.cend());
 
-    if (is_failure(result))
+    if (is_failure(ast))
     {
-        failure_handler(input_file, lines).handle(get_failure(result));
+        failure_handler(input_file, lines).handle(get_failure(ast));
     }
 
     return 0;
