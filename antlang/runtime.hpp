@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <variant>
 #include <vector>
 
@@ -98,6 +99,12 @@ value_variant execute(expression& expr)
 {
     return std::visit(expression_executor(), expr);
 }
+
+struct program
+{
+    std::vector<std::unique_ptr<function>> functions;
+    std::vector<evaluation> evaluations;
+};
 
 }  // namespace runtime
 }  // namespace ant
