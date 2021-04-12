@@ -42,7 +42,13 @@ template <typename T>
 T& get_success(compiler_result<T>& result);
 
 template <typename T>
+T const& get_success(compiler_result<T>const & result);
+
+template <typename T>
 compiler_failure& get_failure(compiler_result<T>& result);
+
+template <typename T>
+compiler_failure const& get_failure(compiler_result<T> const& result);
 
 struct compiler_environment
 {

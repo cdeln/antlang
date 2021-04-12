@@ -28,12 +28,13 @@ read_file(std::string const& filename)
         std::istreambuf_iterator<char>());
 }
 
-struct failure_handler
+struct parser_failure_handler
 {
     std::string file_name;
     std::vector<std::string> lines;
 
-    failure_handler(std::string const& file_name, std::vector<std::string> const& lines)
+    parser_failure_handler(std::string const& file_name,
+                           std::vector<std::string> const& lines)
         : file_name{file_name}
         , lines(lines)
     {
@@ -60,6 +61,14 @@ struct failure_handler
         {
             handle(sub_failure);
         }
+    }
+};
+
+struct compiler_failure_handler
+{
+    void handle(ant::compiler_failure const& failure) const
+    {
+        std::cout << failure.message << '\n';
     }
 };
 
@@ -99,11 +108,25 @@ int main(int argc, char** argv)
 
     const auto parser = ant::make_parser<ant::ast::program>();
 
-    const auto ast = parser.parse(tokens.cbegin(), tokens.cend());
+    const auto parsed = parser.parse(tokens.cbegin(), tokens.cend());
 
-    if (is_failure(ast))
+    if (is_failure(parsed))
     {
-        failure_handler(input_file, lines).handle(get_failure(ast));
+        parser_failure_handler(input_file, lines).handle(get_failure(parsed));
+    }
+
+    ant::ast::program const& statements = ant::get_success(parsed).value;
+
+    ant::runtime::program program;
+    ant::compiler_environment env;
+    const std::vector<ant::compiler_status> compile_info = compile(program, env, statements);
+    for (auto const& status : compile_info)
+    {
+        if (is_failure(status))
+        {
+            compiler_failure_handler().handle(get_failure(status));
+            break;
+        }
     }
 
     return 0;

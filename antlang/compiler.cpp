@@ -51,6 +51,8 @@ compiler_failure const& get_failure(compiler_result<T> const& result)
     return std::get<compiler_failure>(result);
 }
 
+template compiler_failure const& get_failure(compiler_status const& status);
+
 struct literal_compiler
 {
     template <typename T>
