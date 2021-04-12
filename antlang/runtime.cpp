@@ -18,6 +18,16 @@ value_variant execute(evaluation& eval)
     return result;
 }
 
+structure execute(construction& ctor)
+{
+    structure prototype = *ctor.prototype;
+    auto& fields = prototype.fields;
+    auto& args = ctor.arguments;
+    auto exec_arg = [](auto& arg) { return execute(arg); };
+    std::transform(args.begin(), args.end(), fields.begin(), exec_arg);
+    return prototype;
+}
+
 struct expression_executor
 {
     value_variant operator()(value_variant& value) const
@@ -33,6 +43,11 @@ struct expression_executor
     value_variant operator()(std::unique_ptr<evaluation>& eval) const
     {
         return execute(*eval);
+    }
+
+    value_variant operator()(std::unique_ptr<construction>& ctor) const
+    {
+        return execute(*ctor);
     }
 };
 

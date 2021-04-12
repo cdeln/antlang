@@ -58,6 +58,36 @@ TEST_CASE_FIXTURE(fixture, "compile reference in scope returns pointer to value"
     CHECK(ptr == &param);
 }
 
+TEST_CASE_FIXTURE(fixture, "compile structure with no fields")
+{
+    const ast::structure structure = {"my-structure", {}};
+    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    REQUIRE(is_success(result));
+    auto prototype = std::move(get_success(result));
+    REQUIRE(prototype->fields.empty());
+}
+
+TEST_CASE_FIXTURE(fixture, "compile structure with one field of undefind type returns failure")
+{
+    const ast::structure structure = {"my-structure", {{"undefined-type", "field-name"}}};
+    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    REQUIRE(is_failure(result));
+}
+
+TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
+{
+    runtime::function type;
+    type.value = int32_t{};
+    env.functions["i32"] = &type;
+    const ast::structure structure = {"my-structure", {{"i32", "field-name"}}};
+    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    REQUIRE(is_success(result));
+    auto prototype = std::move(get_success(result));
+    REQUIRE(prototype->fields.size() == 1);
+    runtime::value_variant field_type = get_evaluation_prototype(prototype->fields.at(0));
+    REQUIRE(std::holds_alternative<int32_t>(field_type));
+}
+
 TEST_CASE_FIXTURE(fixture, "compile evaluation of undefined function returns failure")
 {
     const ast::evaluation eval = {"undefined-function", {}};

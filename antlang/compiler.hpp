@@ -47,7 +47,7 @@ compiler_failure& get_failure(compiler_result<T>& result);
 struct compiler_environment
 {
     std::map<std::string, runtime::function*> functions;
-    std::map<std::string, runtime::structure const*> structures;
+    std::map<std::string, runtime::structure*> prototypes;
 };
 
 struct compiler_scope
@@ -80,7 +80,7 @@ compiler_result<std::unique_ptr<runtime::function>>
 compile(compiler_environment const& env,
         ast::function const& function);
 
-compiler_result<std::unique_ptr<runtime::function>>
+compiler_result<std::unique_ptr<runtime::structure>>
 compile(compiler_environment const& env,
         ast::structure const& structure);
 

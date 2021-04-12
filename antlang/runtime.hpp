@@ -15,9 +15,9 @@ namespace runtime
 
 struct value_variant;
 
-struct structure : std::vector<value_variant>
+struct structure
 {
-    using std::vector<value_variant>::vector;
+    std::vector<value_variant> fields;
 };
 
 using value_variant_base =
@@ -34,12 +34,14 @@ struct value_variant : value_variant_base
 };
 
 struct evaluation;
+struct construction;
 
 using expression_base =
     std::variant<
         value_variant,
         value_variant*,
-        std::unique_ptr<evaluation>
+        std::unique_ptr<evaluation>,
+        std::unique_ptr<construction>
     >;
 
 struct expression : expression_base
@@ -58,9 +60,21 @@ struct evaluation
     function* blueprint;
     std::vector<expression> arguments;
 
-    evaluation(function& func)
-        : blueprint{&func}
-        , arguments(func.parameters.size())
+    evaluation(function* func)
+        : blueprint{func}
+        , arguments(func->parameters.size())
+    {
+    }
+};
+
+struct construction
+{
+    structure* prototype;
+    std::vector<expression> arguments;
+
+    construction(structure* prototype)
+        : prototype{prototype}
+        , arguments(prototype->fields.size())
     {
     }
 };
@@ -68,10 +82,13 @@ struct evaluation
 struct program
 {
     std::vector<std::unique_ptr<function>> functions;
+    std::vector<std::unique_ptr<structure>> prototypes;
     std::vector<std::unique_ptr<evaluation>> evaluations;
 };
 
 value_variant execute(evaluation& eval);
+
+structure execute(construction& ctor);
 
 value_variant execute(expression& expr);
 
