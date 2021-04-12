@@ -50,6 +50,12 @@ compiler_failure& get_failure(compiler_result<T>& result);
 template <typename T>
 compiler_failure const& get_failure(compiler_result<T> const& result);
 
+runtime::value_variant
+get_evaluation_prototype(runtime::expression const& expr);
+
+bool expression_type_matches(runtime::expression const& expr1,
+                             runtime::expression const& expr2);
+
 struct compiler_environment
 {
     std::map<std::string, runtime::function*> functions;
@@ -90,16 +96,14 @@ compiler_result<std::unique_ptr<runtime::structure>>
 compile(compiler_environment const& env,
         ast::structure const& structure);
 
+compiler_status
+compile(runtime::program& prog,
+        compiler_environment& env,
+        ast::statement const& statement);
+
 std::vector<compiler_status>
 compile(runtime::program& result,
         compiler_environment& env,
         ast::program const& statements);
-
-runtime::value_variant
-get_evaluation_prototype(runtime::expression const& expr);
-
-bool expression_type_matches(
-    runtime::expression const& expr1,
-    runtime::expression const& expr2);
 
 }  // namespace ant

@@ -377,8 +377,7 @@ struct statement_compiler
 
     compiler_status operator()(ast::evaluation const& eval)
     {
-        compiler_result<std::unique_ptr<runtime::evaluation>> result =
-            compile(env, {}, eval);
+        compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, {}, eval);
         if (is_success(result))
         {
             program.evaluations.push_back(std::move(get_success(result)));
@@ -391,8 +390,16 @@ struct statement_compiler
     }
 };
 
+compiler_status
+compile(runtime::program& prog,
+        compiler_environment& env,
+        ast::statement const& statement)
+{
+    return std::visit(statement_compiler{env, prog}, statement);
+}
+
 std::vector<compiler_status>
-compile(runtime::program& result,
+compile(runtime::program& prog,
         compiler_environment& env,
         ast::program const& statements)
 {
@@ -400,12 +407,7 @@ compile(runtime::program& result,
     summary.reserve(statements.size());
     for (auto& statement : statements)
     {
-        compiler_status status =
-            std::visit(
-                statement_compiler{env, result},
-                statement
-            );
-        summary.push_back(std::move(status));
+        summary.push_back(compile(prog, env, statement));
         if (is_failure(summary.back()))
         {
             break;

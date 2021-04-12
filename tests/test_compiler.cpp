@@ -318,23 +318,19 @@ TEST_CASE_FIXTURE(fixture,
 TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation expression")
 {
     runtime::function i32;
-    i32.value = int32_t{0};
-    i32.parameters = {int32_t{0}};
+    i32.value = int32_t{};
+    i32.parameters = {int32_t{}};
     env.functions["i32"] = &i32;
-    const ast::function func
+    const ast::function func =
     {
         "my-function",
         "i32",
         {
-            ast::parameter{"i32", "param"}
+            {"i32", "param"}
         },
         ast::evaluation{"i32", {"param"}}
     };
     auto result = compile(env, func);
-    if (is_failure(result))
-    {
-        MESSAGE(get_failure(result).message);
-    }
     REQUIRE(is_success(result));
     std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
     REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(compiled->value));
@@ -345,4 +341,69 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     REQUIRE(std::holds_alternative<runtime::value_variant*>(eval->arguments.at(0)));
     auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
+}
+
+struct prog_fixture : fixture
+{
+    std::unique_ptr<runtime::function> i32;
+    runtime::program prog;
+
+    prog_fixture()
+    {
+        i32 = std::make_unique<runtime::function>();
+        i32->value = int32_t{};
+        i32->parameters = {int32_t{}};
+        env.functions["i32"] = i32.get();
+        prog.functions.push_back(std::move(i32));
+    }
+};
+
+TEST_CASE_FIXTURE(prog_fixture,
+    "compile statement with function populates the runtime program "
+    "and compiler environment functions")
+{
+    const ast::function func = {
+        "my-function",
+        "i32",
+        {
+            {"i32", "param"}
+        },
+        ast::evaluation{"i32", {"param"}}
+    };
+    ast::statement statement = func;
+    REQUIRE(env.functions.size() == 1);
+    REQUIRE(prog.functions.size() == 1);
+    compiler_status status = compile(prog, env, statement);
+    REQUIRE(is_success(status));
+    REQUIRE(env.functions.size() == 2);
+    REQUIRE(prog.functions.size() == 2);
+    auto it = env.functions.find(func.name);
+    REQUIRE(it != env.functions.end());
+}
+
+TEST_CASE_FIXTURE(prog_fixture,
+    "compile statement with structure populates the runtime program "
+    "and the compiler environment prototypes")
+{
+    const ast::structure structure = {"my-structure", {{"i32", "field"}}};
+    ast::statement statement = structure;
+    REQUIRE(env.prototypes.empty());
+    REQUIRE(prog.prototypes.empty());
+    compiler_status status = compile(prog, env, statement);
+    REQUIRE(is_success(status));
+    REQUIRE(env.prototypes.size() == 1);
+    REQUIRE(prog.prototypes.size() == 1);
+    auto it = env.prototypes.find(structure.name);
+    REQUIRE(it != env.prototypes.end());
+}
+
+TEST_CASE_FIXTURE(prog_fixture,
+    "compile statement with evaluation populates the program evaluations")
+{
+    const ast::evaluation eval = {"i32", {ast::literal<int32_t>{1337}}};
+    ast::statement statement = eval;
+    REQUIRE(prog.evaluations.empty());
+    const compiler_status status = compile(prog, env, statement);
+    REQUIRE(is_success(status));
+    REQUIRE(prog.evaluations.size() == 1);
 }
