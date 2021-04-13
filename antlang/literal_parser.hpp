@@ -42,7 +42,7 @@ struct parser<literal_rule<Literal, Token>>
         try
         {
             return parser_success<Literal>{
-                boost::lexical_cast<value_type>(alternative.value),
+                {boost::lexical_cast<value_type>(alternative.value)},
                 pos + 1
             };
         }

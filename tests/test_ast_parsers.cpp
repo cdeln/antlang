@@ -49,7 +49,7 @@ TEST_CASE("can parse function")
     REQUIRE(is_success(result));
     const auto [function, pos] = get_success(result);
     CHECK(function.name == "function-name");
-    CHECK(function.return_type == "return-type");
+    CHECK(function.return_type.name == "return-type");
     REQUIRE(function.parameters.size() == 1);
     CHECK(function.parameters.at(0).type == "parameter-type");
     CHECK(function.parameters.at(0).name == "parameter-name");
@@ -85,8 +85,8 @@ TEST_CASE("can parse identifier expression")
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
-    REQUIRE(std::holds_alternative<std::string>(expr));
-    CHECK(std::get<std::string>(expr) == "name");
+    REQUIRE(ast::holds<ast::reference>(expr));
+    CHECK(ast::get<ast::reference>(expr).name == "name");
     CHECK(pos == tokens.end());
 }
 
@@ -106,10 +106,10 @@ TEST_CASE("can parse simple evaluation")
     CHECK(pos == tokens.end());
     CHECK(eval.function == "func");
     CHECK(eval.arguments.size() == 2);
-    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(0)));
-    CHECK(std::get<std::string>(eval.arguments.at(0)) == "arg1");
-    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(1)));
-    CHECK(std::get<std::string>(eval.arguments.at(0)) == "arg1");
+    REQUIRE(ast::holds<ast::reference>(eval.arguments.at(0)));
+    CHECK(ast::get<ast::reference>(eval.arguments.at(0)).name == "arg1");
+    REQUIRE(ast::holds<ast::reference>(eval.arguments.at(1)));
+    CHECK(ast::get<ast::reference>(eval.arguments.at(0)).name == "arg1");
 }
 
 TEST_CASE("can parse evaluation expression")
@@ -126,14 +126,14 @@ TEST_CASE("can parse evaluation expression")
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.end());
-    REQUIRE(std::holds_alternative<ast::evaluation>(expr));
-    const auto eval = std::get<ast::evaluation>(expr);
+    REQUIRE(ast::holds<ast::evaluation>(expr));
+    const auto eval = ast::get<ast::evaluation>(expr);
     CHECK(eval.function == "func");
     CHECK(eval.arguments.size() == 2);
-    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(0)));
-    CHECK(std::get<std::string>(eval.arguments.at(0)) == "arg1");
-    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(1)));
-    CHECK(std::get<std::string>(eval.arguments.at(0)) == "arg1");
+    REQUIRE(ast::holds<ast::reference>(eval.arguments.at(0)));
+    CHECK(ast::get<ast::reference>(eval.arguments.at(0)).name == "arg1");
+    REQUIRE(ast::holds<ast::reference>(eval.arguments.at(1)));
+    CHECK(ast::get<ast::reference>(eval.arguments.at(0)).name == "arg1");
 }
 
 TEST_CASE("can parse complex evaluation")
@@ -160,19 +160,19 @@ TEST_CASE("can parse complex evaluation")
     CHECK(eval.function == "outer-func");
     CHECK(eval.arguments.size() == 2);
 
-    REQUIRE(std::holds_alternative<ast::evaluation>(eval.arguments.at(0)));
-    const auto inner_eval_1 = std::get<ast::evaluation>(eval.arguments.at(0));
+    REQUIRE(ast::holds<ast::evaluation>(eval.arguments.at(0)));
+    const auto inner_eval_1 = ast::get<ast::evaluation>(eval.arguments.at(0));
     CHECK(inner_eval_1.function == "inner-func-1");
     REQUIRE(inner_eval_1.arguments.size() == 1);
-    REQUIRE(std::holds_alternative<std::string>(inner_eval_1.arguments.at(0)));
-    CHECK(std::get<std::string>(inner_eval_1.arguments.at(0)) == "arg1");
+    REQUIRE(ast::holds<ast::reference>(inner_eval_1.arguments.at(0)));
+    CHECK(ast::get<ast::reference>(inner_eval_1.arguments.at(0)).name == "arg1");
 
-    REQUIRE(std::holds_alternative<ast::evaluation>(eval.arguments.at(1)));
-    const auto inner_eval_2 = std::get<ast::evaluation>(eval.arguments.at(1));
+    REQUIRE(ast::holds<ast::evaluation>(eval.arguments.at(1)));
+    const auto inner_eval_2 = ast::get<ast::evaluation>(eval.arguments.at(1));
     CHECK(inner_eval_2.function == "inner-func-2");
     REQUIRE(inner_eval_2.arguments.size() == 1);
-    REQUIRE(std::holds_alternative<std::string>(inner_eval_2.arguments.at(0)));
-    CHECK(std::get<std::string>(inner_eval_2.arguments.at(0)) == "arg2");
+    REQUIRE(ast::holds<ast::reference>(inner_eval_2.arguments.at(0)));
+    CHECK(ast::get<ast::reference>(inner_eval_2.arguments.at(0)).name == "arg2");
 }
 
 TEST_CASE("can parse 32 bit integer literal")
@@ -256,8 +256,8 @@ TEST_CASE("can parse literal variant with integer alternative")
     REQUIRE(is_success(result));
     const auto [literal, pos] = get_success(result);
     CHECK(pos == tokens.cend());
-    REQUIRE(std::holds_alternative<ast::i32>(literal));
-    const auto i32 = std::get<ast::i32>(literal);
+    REQUIRE(ast::holds<ast::i32>(literal));
+    const auto i32 = ast::get<ast::i32>(literal);
     CHECK(i32.value == 1337);
 }
 
@@ -271,9 +271,9 @@ TEST_CASE("can parse identifier expression")
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
-    REQUIRE(std::holds_alternative<std::string>(expr));
-    const auto name = std::get<std::string>(expr);
-    CHECK(name == "name");
+    REQUIRE(ast::holds<ast::reference>(expr));
+    const auto ref = ast::get<ast::reference>(expr);
+    CHECK(ref.name == "name");
 }
 
 TEST_CASE("can parse literal expression")
@@ -289,10 +289,10 @@ TEST_CASE("can parse literal expression")
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
-    REQUIRE(std::holds_alternative<ast::literal_variant>(expr));
-    const auto variant = std::get<ast::literal_variant>(expr);
-    REQUIRE(std::holds_alternative<ast::i32>(variant));
-    const auto literal = std::get<ast::i32>(variant);
+    REQUIRE(ast::holds<ast::literal_variant>(expr));
+    const auto variant = ast::get<ast::literal_variant>(expr);
+    REQUIRE(ast::holds<ast::i32>(variant));
+    const auto literal = ast::get<ast::i32>(variant);
     CHECK(literal.value == 1337);
 }
 
@@ -315,18 +315,18 @@ TEST_CASE("can parse evaluation expression")
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
-    REQUIRE(std::holds_alternative<ast::evaluation>(expr));
-    const auto eval = std::get<ast::evaluation>(expr);
+    REQUIRE(ast::holds<ast::evaluation>(expr));
+    const auto eval = ast::get<ast::evaluation>(expr);
     CHECK(eval.function == "my-function");
     REQUIRE(eval.arguments.size() == 2);
-    REQUIRE(std::holds_alternative<ast::literal_variant>(eval.arguments.at(0)));
-    const auto variant = std::get<ast::literal_variant>(eval.arguments.at(0));
-    REQUIRE(std::holds_alternative<ast::i32>(variant));
-    const auto literal = std::get<ast::i32>(variant);
+    REQUIRE(ast::holds<ast::literal_variant>(eval.arguments.at(0)));
+    const auto variant = ast::get<ast::literal_variant>(eval.arguments.at(0));
+    REQUIRE(ast::holds<ast::i32>(variant));
+    const auto literal = ast::get<ast::i32>(variant);
     CHECK(literal.value == 1337);
-    REQUIRE(std::holds_alternative<std::string>(eval.arguments.at(1)));
-    const auto name  = std::get<std::string>(eval.arguments.at(1));
-    CHECK(name == "my-argument");
+    REQUIRE(ast::holds<ast::reference>(eval.arguments.at(1)));
+    const auto ref = ast::get<ast::reference>(eval.arguments.at(1));
+    CHECK(ref.name == "my-argument");
 }
 
 TEST_CASE("can parse nested evaluation expression")
@@ -350,17 +350,17 @@ TEST_CASE("can parse nested evaluation expression")
     REQUIRE(is_success(result));
     const auto [expr, pos] = get_success(result);
     CHECK(pos == tokens.cend());
-    REQUIRE(std::holds_alternative<ast::evaluation>(expr));
-    const auto eval = std::get<ast::evaluation>(expr);
+    REQUIRE(ast::holds<ast::evaluation>(expr));
+    const auto eval = ast::get<ast::evaluation>(expr);
     CHECK(eval.function == "my-function");
     REQUIRE(eval.arguments.size() == 2);
-    REQUIRE(std::holds_alternative<ast::literal_variant>(eval.arguments.at(0)));
-    const auto variant = std::get<ast::literal_variant>(eval.arguments.at(0));
-    REQUIRE(std::holds_alternative<ast::i32>(variant));
-    const auto literal = std::get<ast::i32>(variant);
+    REQUIRE(ast::holds<ast::literal_variant>(eval.arguments.at(0)));
+    const auto variant = ast::get<ast::literal_variant>(eval.arguments.at(0));
+    REQUIRE(ast::holds<ast::i32>(variant));
+    const auto literal = ast::get<ast::i32>(variant);
     CHECK(literal.value == 1337);
-    REQUIRE(std::holds_alternative<ast::evaluation>(eval.arguments.at(1)));
-    const auto nested = std::get<ast::evaluation>(eval.arguments.at(1));
+    REQUIRE(ast::holds<ast::evaluation>(eval.arguments.at(1)));
+    const auto nested = ast::get<ast::evaluation>(eval.arguments.at(1));
     CHECK(nested.function == "my-nested-function");
     CHECK(nested.arguments.empty());
 }

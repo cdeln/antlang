@@ -19,7 +19,7 @@ namespace ant
 template <typename Target, typename Source>
 Target convert(Source&& x)
 {
-    return Target(std::forward<Source>(x));
+    return Source{std::forward<Source>(x)};
 }
 
 template <typename Struct, typename... Ts, size_t... Is>
@@ -33,6 +33,12 @@ Struct convert(std::tuple<Ts...>&& x)
 {
     return convert_impl<Struct>(std::move(x), std::make_index_sequence<sizeof...(Ts)>());
 }
+
+template <typename Attribute, typename = void>
+struct has_context : std::false_type {};
+
+template <typename Attribute>
+struct has_context<Attribute, std::void_t<decltype(Attribute::context)>> : std::true_type {};
 
 template <typename Attribute>
 struct parser<ast_rule<Attribute>>
@@ -48,7 +54,12 @@ struct parser<ast_rule<Attribute>>
         if (is_success(result))
         {
             auto [value, next] = get_success(result);
-            return parser_success<attribute_type>{convert<Attribute>(std::move(value)), next};
+            Attribute converted = convert<Attribute>(std::move(value));
+            if constexpr (has_context<Attribute>())
+            {
+                converted.context = pos->context;
+            }
+            return parser_success<attribute_type>{std::move(converted), next};
         }
         else
         {

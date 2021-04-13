@@ -28,33 +28,43 @@ read_file(std::string const& filename)
         std::istreambuf_iterator<char>());
 }
 
-struct parser_failure_handler
+struct failure_handler
 {
     std::string file_name;
     std::vector<std::string> lines;
 
-    parser_failure_handler(std::string const& file_name,
-                           std::vector<std::string> const& lines)
+    failure_handler(std::string const& file_name,
+                    std::vector<std::string> const& lines)
         : file_name{file_name}
         , lines(lines)
     {
     }
 
-    void handle(ant::parser_failure const& failure) const
+
+    void show_context_info(ant::token_context context)
+    {
+        const int line_index = context.line - 1;
+        const std::string line = lines.at(line_index);
+        const int line_length = line.size();
+        const int pad_left = context.offset - 1;
+        const int pad_right = line_length - pad_left - 1;
+        std::cout << '\n' << line << '\n'
+                  << std::string(pad_left, '~')
+                  << '^'
+                  << std::string(pad_right, '~') << '\n';
+    }
+};
+
+struct parser_failure_handler : failure_handler
+{
+    using failure_handler::failure_handler;
+
+    void handle(ant::parser_failure const& failure)
     {
         std::cout << file_name << ":" << failure.context.line << ": " << failure.message;
         if (failure.children.empty())
         {
-            const auto context = failure.context;
-            const int line_index = context.line - 1;
-            const std::string line = lines.at(line_index);
-            const int line_length = line.size();
-            const int pad_left = context.offset - 1;
-            const int pad_right = line_length - pad_left - 1;
-            std::cout << '\n' << line << '\n'
-                      << std::string(pad_left, '~')
-                      << '^'
-                      << std::string(pad_right, '~') << '\n';
+            show_context_info(failure.context);
         }
         std::cout << '\n';
         for (auto const& sub_failure : failure.children)
@@ -64,11 +74,19 @@ struct parser_failure_handler
     }
 };
 
-struct compiler_failure_handler
+struct compiler_failure_handler : failure_handler
 {
-    void handle(ant::compiler_failure const& failure) const
+    using failure_handler::failure_handler;
+
+    void handle(ant::compiler_failure const& failure)
     {
-        std::cout << failure.message << '\n';
+        std::cout << file_name << ":" << failure.context.line << ": " << failure.message;
+        const ant::token_context context = failure.context;
+        if (context.line)
+        {
+            show_context_info(context);
+        }
+        std::cout << '\n';
     }
 };
 
@@ -124,7 +142,7 @@ int main(int argc, char** argv)
     {
         if (is_failure(status))
         {
-            compiler_failure_handler().handle(get_failure(status));
+            compiler_failure_handler(input_file, lines).handle(get_failure(status));
             break;
         }
     }

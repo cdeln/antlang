@@ -35,23 +35,23 @@ TEST_CASE_FIXTURE(fixture, "compile parameter with defined type returns success"
 
 TEST_CASE_FIXTURE(fixture, "compile undefined reference returns failure")
 {
-    const ast::reference ref = "undefined-reference";
+    const ast::reference ref{"undefined-reference"};
     compiler_result<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile undefined reference returns failure")
 {
-    const ast::reference ref = "undefined-reference";
+    const ast::reference ref{"undefined-reference"};
     compiler_result<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile reference in scope returns pointer to value")
 {
-    const ast::reference ref = "defined-reference";
+    const ast::reference ref{"defined-reference"};
     runtime::value_variant param;
-    scope.parameters[ref] = &param;
+    scope.parameters[ref.name] = &param;
     compiler_result<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_success(result));
     runtime::value_variant* ptr = std::get<runtime::value_variant*>(result);
@@ -168,11 +168,11 @@ TEST_CASE_FIXTURE(fixture, "compile literal value expression")
 
 TEST_CASE_FIXTURE(fixture, "compile parameter reference expression")
 {
-    const ast::reference ref = "defined-reference";
+    const ast::reference ref{"defined-reference"};
     const ast::expression expr = ref;
 
     runtime::value_variant param;
-    scope.parameters[ref] = &param;
+    scope.parameters[ref.name] = &param;
 
     compiler_result<runtime::expression> result = compile(env, scope, expr);
     REQUIRE(is_success(result));
@@ -203,7 +203,7 @@ TEST_CASE_FIXTURE(fixture, "compile function with undefined return type returns 
     const ast::function func
     {
         "my-function",
-        "undefined-type",
+        ast::reference{"undefined-type"},
         {},
         ast::literal_variant{ast::literal<int32_t>{1337}}
     };
@@ -219,7 +219,7 @@ TEST_CASE_FIXTURE(fixture, "compile function with return/value type mis-match re
     const ast::function func
     {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {},
         ast::literal_variant{ast::literal<int64_t>{1337}}
     };
@@ -235,7 +235,7 @@ TEST_CASE_FIXTURE(fixture, "compile nullary value expression function")
     const ast::function func
     {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {},
         ast::literal_variant{ast::literal<int32_t>{1337}}
     };
@@ -260,7 +260,7 @@ TEST_CASE_FIXTURE(fixture,
     const ast::function func
     {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {
             ast::parameter{"i32", "param"}
         },
@@ -278,7 +278,7 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid parameter referenc
     const ast::function func
     {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {
             ast::parameter{"i32", "param"}
         },
@@ -305,11 +305,11 @@ TEST_CASE_FIXTURE(fixture,
     const ast::function func
     {
         "my-function",
-        "i64",
+        ast::reference{"i64"},
         {
             ast::parameter{"i32", "param"}
         },
-        ast::evaluation{"i32", {"param"}}
+        ast::evaluation{"i32", {ast::reference{"param"}}}
     };
     auto result = compile(env, func);
     REQUIRE(is_failure(result));
@@ -324,11 +324,11 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     const ast::function func =
     {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {
             {"i32", "param"}
         },
-        ast::evaluation{"i32", {"param"}}
+        ast::evaluation{"i32", {ast::reference{"param"}}}
     };
     auto result = compile(env, func);
     REQUIRE(is_success(result));
@@ -364,11 +364,11 @@ TEST_CASE_FIXTURE(prog_fixture,
 {
     const ast::function func = {
         "my-function",
-        "i32",
+        ast::reference{"i32"},
         {
             {"i32", "param"}
         },
-        ast::evaluation{"i32", {"param"}}
+        ast::evaluation{"i32", {ast::reference{"param"}}}
     };
     ast::statement statement = func;
     REQUIRE(env.functions.size() == 1);

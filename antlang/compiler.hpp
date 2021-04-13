@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tokens.hpp"
 #include "ast.hpp"
 #include "runtime.hpp"
 
@@ -17,6 +18,7 @@ struct compiler_success
 struct compiler_failure
 {
     std::string message;
+    token_context context;
 };
 
 using compiler_status =

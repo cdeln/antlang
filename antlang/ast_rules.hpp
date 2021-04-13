@@ -40,68 +40,6 @@ using token_type_t = typename token_type<Literal>::type;
 template <class Attribute>
 struct ast_rule;
 
-template <>
-struct ast_rule<ast::parameter> :
-    rule_spec<
-        sequence<identifier_token, identifier_token>,
-        ast::parameter
-    >
-{};
-
-template <>
-struct rule_of<ast::parameter>
-{
-    using type = ast_rule<ast::parameter>;
-};
-
-template <>
-struct ast_rule<ast::function> :
-    rule_spec<
-        sequence<
-            left_parenthesis_token,
-            function_token,
-            identifier_token,
-            identifier_token,
-            left_parenthesis_token,
-            repetition<
-                ast::parameter,
-                right_parenthesis_token
-            >,
-            ast::expression,
-            right_parenthesis_token
-        >,
-        ast::function
-    >
-{};
-
-template <>
-struct rule_of<ast::function>
-{
-    using type = ast_rule<ast::function>;
-};
-
-template <>
-struct ast_rule<ast::structure> :
-    rule_spec<
-        sequence<
-            left_parenthesis_token,
-            structure_token,
-            identifier_token,
-            repetition<
-                ast::parameter,
-                right_parenthesis_token
-            >
-        >,
-        ast::structure
-    >
-{};
-
-template <>
-struct rule_of<ast::structure>
-{
-    using type = ast_rule<ast::structure>;
-};
-
 template <typename T>
 struct ast_rule<ast::literal<T>> :
     rule_spec<
@@ -148,10 +86,86 @@ struct rule_of<ast::literal_variant>
 };
 
 template <>
+struct ast_rule<ast::parameter> :
+    rule_spec<
+        sequence<identifier_token, identifier_token>,
+        ast::parameter
+    >
+{};
+
+template <>
+struct rule_of<ast::parameter>
+{
+    using type = ast_rule<ast::parameter>;
+};
+
+template <>
+struct ast_rule<ast::reference> :
+    rule_spec<
+        sequence<identifier_token>,
+        ast::reference
+    >
+{};
+
+template <>
+struct rule_of<ast::reference>
+{
+    using type = ast_rule<ast::reference>;
+};
+
+template <>
+struct ast_rule<ast::function> :
+    rule_spec<
+        sequence<
+            left_parenthesis_token,
+            function_token,
+            identifier_token,
+            ast::reference,
+            left_parenthesis_token,
+            repetition<
+                ast::parameter,
+                right_parenthesis_token
+            >,
+            ast::expression,
+            right_parenthesis_token
+        >,
+        ast::function
+    >
+{};
+
+template <>
+struct rule_of<ast::function>
+{
+    using type = ast_rule<ast::function>;
+};
+
+template <>
+struct ast_rule<ast::structure> :
+    rule_spec<
+        sequence<
+            left_parenthesis_token,
+            structure_token,
+            identifier_token,
+            repetition<
+                ast::parameter,
+                right_parenthesis_token
+            >
+        >,
+        ast::structure
+    >
+{};
+
+template <>
+struct rule_of<ast::structure>
+{
+    using type = ast_rule<ast::structure>;
+};
+
+template <>
 struct ast_rule<ast::expression> :
     rule_spec<
         alternative<
-            identifier_token,
+            ast::reference,
             ast::literal_variant,
             ast::evaluation
         >,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fundamental_types.hpp"
+#include "tokens.hpp"
 
 #include <string>
 #include <variant>
@@ -11,11 +12,45 @@ namespace ant
 namespace ast
 {
 
+template <typename Alternative, typename Variant>
+constexpr bool holds(Variant const& variant) noexcept
+{
+    return std::holds_alternative<Alternative>(variant);
+}
+
+template <typename Alternative, typename Variant>
+constexpr decltype(auto) get(Variant&& variant)
+{
+    return std::get<Alternative>(std::forward<Variant>(variant));
+}
+
+template <typename Visitor, typename Variant>
+decltype(auto) visit(Visitor&& visitor, Variant&& variant)
+{
+    return std::visit(std::forward<Visitor>(visitor),
+                      std::forward<Variant>(variant));
+}
+
+template <typename T>
+token_context
+get_context(T&& x)
+{
+    return x.context;
+}
+
+template <typename... Ts>
+token_context
+get_context(std::variant<Ts...> const& v)
+{
+    return visit([](auto const& x) { return get_context(x); }, v);
+}
+
 template <typename T>
 struct literal
 {
     using value_type = T;
     value_type value;
+    token_context context;
 };
 
 using i8  = literal<int8_t>;
@@ -42,11 +77,16 @@ struct parameter
 {
     std::string type;
     std::string name;
+    token_context context;
+};
+
+struct reference
+{
+    std::string name;
+    token_context context;
 };
 
 struct evaluation;
-
-using reference = std::string;
 
 using expression =
     std::variant<
@@ -59,21 +99,23 @@ struct evaluation
 {
     std::string function;
     std::vector<expression> arguments;
+    token_context context;
 };
-
 
 struct function
 {
     std::string name;
-    std::string return_type;
+    reference return_type;
     std::vector<parameter> parameters;
     expression body;
+    token_context context;
 };
 
 struct structure
 {
     std::string name;
     std::vector<parameter> fields;
+    token_context context;
 };
 
 using statement =
