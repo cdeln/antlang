@@ -418,4 +418,38 @@ compile(runtime::program& prog,
     return summary;
 }
 
+template <typename T>
+std::unique_ptr<runtime::function>
+make_fundamental_type()
+{
+    auto type = std::make_unique<runtime::function>();
+    type->value = T{};
+    return std::move(type);
+};
+
+template <typename T>
+void add_fundamental_type(compiler_environment& env, runtime::program& prog)
+{
+    prog.functions.push_back(make_fundamental_type<T>());
+    env.functions[ast::name_of<ast::literal<T>>::value] = prog.functions.back().get();
+}
+
+std::pair<compiler_environment, runtime::program>
+setup_compiler()
+{
+    compiler_environment env;
+    runtime::program prog;
+    add_fundamental_type<int8_t>(env, prog);
+    add_fundamental_type<int16_t>(env, prog);
+    add_fundamental_type<int32_t>(env, prog);
+    add_fundamental_type<int64_t>(env, prog);
+    add_fundamental_type<uint8_t>(env, prog);
+    add_fundamental_type<uint16_t>(env, prog);
+    add_fundamental_type<uint32_t>(env, prog);
+    add_fundamental_type<uint64_t>(env, prog);
+    add_fundamental_type<flt32_t>(env, prog);
+    add_fundamental_type<flt64_t>(env, prog);
+    return {std::move(env), std::move(prog)};
+};
+
 }  // namespace ant

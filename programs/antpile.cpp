@@ -136,9 +136,8 @@ int main(int argc, char** argv)
 
     ant::ast::program const& statements = ant::get_success(parsed).value;
 
-    ant::runtime::program program;
-    ant::compiler_environment env;
-    const std::vector<ant::compiler_status> compile_info = compile(program, env, statements);
+    auto [env, prog] = ant::setup_compiler();
+    const std::vector<ant::compiler_status> compile_info = compile(prog, env, statements);
     for (auto const& status : compile_info)
     {
         if (is_failure(status))

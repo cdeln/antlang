@@ -107,4 +107,7 @@ compile(runtime::program& result,
         compiler_environment& env,
         ast::program const& statements);
 
+std::pair<compiler_environment, runtime::program>
+setup_compiler();
+
 }  // namespace ant
