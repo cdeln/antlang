@@ -114,7 +114,7 @@ struct expression_prototype_getter
 
     runtime::value_variant operator()(std::unique_ptr<runtime::construction> const& ctor) const
     {
-        return get_evaluation_prototype(*ctor->prototype);
+        return runtime::execute(*ctor);
     }
 };
 
@@ -124,15 +124,6 @@ get_evaluation_prototype(runtime::expression const& expr)
     return std::visit(expression_prototype_getter(),
                       static_cast<runtime::expression_base const&>(expr));
 }
-
-struct is_same_visitor
-{
-    template <typename A, typename B>
-    constexpr bool operator()(A const&, B const&) noexcept
-    {
-        return std::is_same_v<A, B>;
-    }
-};
 
 bool expression_type_matches(
     runtime::expression const& expr1,
@@ -314,27 +305,27 @@ compile(compiler_environment const& env, ast::function const& function)
     return std::move(result);
 }
 
-compiler_result<std::unique_ptr<runtime::structure>>
+compiler_result<std::unique_ptr<runtime::function>>
 compile(compiler_environment const& env, ast::structure  const& structure)
 {
-    auto it = env.prototypes.find(structure.name);
+    auto it = env.functions.find(structure.name);
 
-    if (it != env.prototypes.end())
+    if (it != env.functions.end())
     {
         std::stringstream message;
         message << "Redefinition of structure " << structure.name;
         return compiler_failure{message.str(), structure.context};
     }
 
-    auto prototype = std::make_unique<runtime::structure>();
-    prototype->fields.reserve(structure.fields.size());
+    auto constructor = std::make_unique<runtime::function>();
+    constructor->parameters.reserve(structure.fields.size());
 
     for (const ast::parameter& field : structure.fields)
     {
         compiler_result<runtime::value_variant> compiled = compile(env, field);
         if (is_success(compiled))
         {
-            prototype->fields.push_back(std::move(get_success(compiled)));
+            constructor->parameters.push_back(std::move(get_success(compiled)));
         }
         else
         {
@@ -342,7 +333,10 @@ compile(compiler_environment const& env, ast::structure  const& structure)
         }
     }
 
-    return std::move(prototype);
+    // bootstrap the type system!
+    constructor->value = std::make_unique<runtime::construction>(constructor.get());
+
+    return std::move(constructor);
 }
 
 struct statement_compiler
@@ -355,9 +349,9 @@ struct statement_compiler
         compiler_result<std::unique_ptr<runtime::function>> result = compile(env, function);
         if (is_success(result))
         {
-            std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
-            env.functions[function.name] = compiled.get();
-            program.functions.push_back(std::move(compiled));
+            std::unique_ptr<runtime::function> blueprint = std::move(get_success(result));
+            env.functions[function.name] = blueprint.get();
+            program.functions.push_back(std::move(blueprint));
             return compiler_success{function.name};
         }
         else
@@ -368,12 +362,12 @@ struct statement_compiler
 
     compiler_status operator()(ast::structure const& structure)
     {
-        compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+        compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
         if (is_success(result))
         {
-            std::unique_ptr<runtime::structure> prototype = std::move(get_success(result));
-            env.prototypes[structure.name] = prototype.get();
-            program.prototypes.push_back(std::move(prototype));
+            std::unique_ptr<runtime::function> constructor = std::move(get_success(result));
+            env.functions[structure.name] = constructor.get();
+            program.functions.push_back(std::move(constructor));
             return compiler_success{structure.name};
         }
         else

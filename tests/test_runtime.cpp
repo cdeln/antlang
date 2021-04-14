@@ -74,14 +74,12 @@ TEST_CASE("execute evaluation of function with parameter expression type")
 
 TEST_CASE("execute construction with parameter expression type")
 {
-    structure prototype;
-    prototype.fields.resize(1);
+    function prototype;
+    prototype.parameters.resize(1);
 
     construction ctor(&prototype);
 
-    REQUIRE(ctor.arguments.size() == prototype.fields.size());
-
-    ctor.arguments.at(0) = int32_t{1337};
+    prototype.parameters.at(0) = int32_t{1337};
     const value_variant result = execute(ctor);
 
     REQUIRE(std::holds_alternative<structure>(result));

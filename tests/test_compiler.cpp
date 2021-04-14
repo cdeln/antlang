@@ -58,19 +58,57 @@ TEST_CASE_FIXTURE(fixture, "compile reference in scope returns pointer to value"
     CHECK(ptr == &param);
 }
 
+TEST_CASE("get_evaluation_prototype returns the expected value variant for literal")
+{
+    runtime::expression expr = int32_t{0};
+    runtime::value_variant proto = get_evaluation_prototype(expr);
+    CHECK(std::holds_alternative<int32_t>(proto));
+}
+
+TEST_CASE("get_evaluation_prototype returns the expected value variant for structure")
+{
+    runtime::expression expr = runtime::structure{{int32_t{0}}};
+    runtime::value_variant proto = get_evaluation_prototype(expr);
+    REQUIRE(std::holds_alternative<runtime::structure>(proto));
+    auto instance = std::get<runtime::structure>(proto);
+    REQUIRE(instance.fields.size() == 1);
+    CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
+}
+
+TEST_CASE("get_evaluation_prototype returns the expected value variant for evaluation")
+{
+    runtime::function func;
+    func.value = int32_t{};
+    runtime::expression expr = std::make_unique<runtime::evaluation>(&func);
+    runtime::value_variant proto = get_evaluation_prototype(expr);
+    REQUIRE(std::holds_alternative<int32_t>(proto));
+}
+
+TEST_CASE("get_evaluation_prototype returns the expected value variant for construction")
+{
+    runtime::function func;
+    func.parameters = {int32_t{}};
+    func.value = std::make_unique<runtime::construction>(&func);
+    runtime::value_variant proto = get_evaluation_prototype(func.value);
+    REQUIRE(std::holds_alternative<runtime::structure>(proto));
+    auto instance = std::get<runtime::structure>(proto);
+    REQUIRE(instance.fields.size() == 1);
+    CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
+}
+
 TEST_CASE_FIXTURE(fixture, "compile structure with no fields")
 {
     const ast::structure structure = {"my-structure", {}};
-    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
     REQUIRE(is_success(result));
-    auto prototype = std::move(get_success(result));
-    REQUIRE(prototype->fields.empty());
+    auto constructor = std::move(get_success(result));
+    REQUIRE(constructor->parameters.empty());
 }
 
 TEST_CASE_FIXTURE(fixture, "compile structure with one field of undefind type returns failure")
 {
     const ast::structure structure = {"my-structure", {{"undefined-type", "field-name"}}};
-    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
     REQUIRE(is_failure(result));
 }
 
@@ -80,11 +118,11 @@ TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
     type.value = int32_t{};
     env.functions["i32"] = &type;
     const ast::structure structure = {"my-structure", {{"i32", "field-name"}}};
-    compiler_result<std::unique_ptr<runtime::structure>> result = compile(env, structure);
+    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
     REQUIRE(is_success(result));
-    auto prototype = std::move(get_success(result));
-    REQUIRE(prototype->fields.size() == 1);
-    runtime::value_variant field_type = get_evaluation_prototype(prototype->fields.at(0));
+    auto constructor= std::move(get_success(result));
+    REQUIRE(constructor->parameters.size() == 1);
+    runtime::value_variant field_type = get_evaluation_prototype(constructor->parameters.at(0));
     REQUIRE(std::holds_alternative<int32_t>(field_type));
 }
 
@@ -105,13 +143,6 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of nullary function")
     auto& compiled = std::get<std::unique_ptr<runtime::evaluation>>(result);
     CHECK(compiled->blueprint == &func);
     CHECK(compiled->arguments.empty());
-}
-
-TEST_CASE("get_evaluation_prototype returns the expected value variant")
-{
-    runtime::expression expr = int32_t{0};
-    runtime::value_variant proto = get_evaluation_prototype(expr);
-    CHECK(std::holds_alternative<int32_t>(proto));
 }
 
 TEST_CASE("expression_type_matches returns false for value_variants with different underlying type")
@@ -382,19 +413,18 @@ TEST_CASE_FIXTURE(prog_fixture,
 }
 
 TEST_CASE_FIXTURE(prog_fixture,
-    "compile statement with structure populates the runtime program "
-    "and the compiler environment prototypes")
+    "compile statement with structure populates the runtime program and the compiler environment")
 {
     const ast::structure structure = {"my-structure", {{"i32", "field"}}};
     ast::statement statement = structure;
-    REQUIRE(env.prototypes.empty());
-    REQUIRE(prog.prototypes.empty());
+    CHECK(env.functions.size() == 1);
+    CHECK(prog.functions.size() == 1);
+    CHECK(env.functions.find(structure.name) == env.functions.end());
     compiler_status status = compile(prog, env, statement);
     REQUIRE(is_success(status));
-    REQUIRE(env.prototypes.size() == 1);
-    REQUIRE(prog.prototypes.size() == 1);
-    auto it = env.prototypes.find(structure.name);
-    REQUIRE(it != env.prototypes.end());
+    CHECK(env.functions.size() == 2);
+    CHECK(prog.functions.size() == 2);
+    CHECK(env.functions.find(structure.name) != env.functions.end());
 }
 
 TEST_CASE_FIXTURE(prog_fixture,

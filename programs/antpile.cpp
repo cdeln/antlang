@@ -131,6 +131,7 @@ int main(int argc, char** argv)
     if (is_failure(parsed))
     {
         parser_failure_handler(input_file, lines).handle(get_failure(parsed));
+        return -1;
     }
 
     ant::ast::program const& statements = ant::get_success(parsed).value;
@@ -143,7 +144,7 @@ int main(int argc, char** argv)
         if (is_failure(status))
         {
             compiler_failure_handler(input_file, lines).handle(get_failure(status));
-            break;
+            return -1;
         }
     }
 

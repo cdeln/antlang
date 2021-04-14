@@ -20,12 +20,7 @@ value_variant execute(evaluation& eval)
 
 structure execute(construction& ctor)
 {
-    structure prototype = *ctor.prototype;
-    auto& fields = prototype.fields;
-    auto& args = ctor.arguments;
-    auto exec_arg = [](auto& arg) { return execute(arg); };
-    std::transform(args.begin(), args.end(), fields.begin(), exec_arg);
-    return prototype;
+    return structure{ctor.prototype->parameters};
 }
 
 struct expression_executor

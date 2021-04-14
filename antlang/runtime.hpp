@@ -69,12 +69,10 @@ struct evaluation
 
 struct construction
 {
-    structure* prototype;
-    std::vector<expression> arguments;
+    function* prototype;
 
-    construction(structure* prototype)
+    construction(function* prototype)
         : prototype{prototype}
-        , arguments(prototype->fields.size())
     {
     }
 };
@@ -82,7 +80,6 @@ struct construction
 struct program
 {
     std::vector<std::unique_ptr<function>> functions;
-    std::vector<std::unique_ptr<structure>> prototypes;
     std::vector<std::unique_ptr<evaluation>> evaluations;
 };
 

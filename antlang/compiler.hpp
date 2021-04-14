@@ -61,7 +61,6 @@ bool expression_type_matches(runtime::expression const& expr1,
 struct compiler_environment
 {
     std::map<std::string, runtime::function*> functions;
-    std::map<std::string, runtime::structure*> prototypes;
 };
 
 struct compiler_scope
@@ -94,7 +93,7 @@ compiler_result<std::unique_ptr<runtime::function>>
 compile(compiler_environment const& env,
         ast::function const& function);
 
-compiler_result<std::unique_ptr<runtime::structure>>
+compiler_result<std::unique_ptr<runtime::function>>
 compile(compiler_environment const& env,
         ast::structure const& structure);
 
