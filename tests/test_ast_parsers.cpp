@@ -78,6 +78,50 @@ TEST_CASE("can parse structure")
     CHECK(pos == tokens.end());
 }
 
+TEST_CASE("can parse branch")
+{
+    const std::vector<token> tokens =
+    {
+        {left_parenthesis_token{}},
+        {identifier_token{"boolean-condition"}},
+        {identifier_token{"reference-name"}},
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::branch>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+}
+
+TEST_CASE("can parse condition")
+{
+    const std::vector<token> tokens =
+    {
+        {left_parenthesis_token{}},
+        {condition_token{}},
+
+        {left_parenthesis_token{}},
+            {identifier_token{"boolean-condition"}},
+            {identifier_token{"reference-name"}},
+        {right_parenthesis_token{}},
+
+        {left_parenthesis_token{}},
+            {boolean_literal_token{"true"}},
+            {left_parenthesis_token{}},
+                {identifier_token{"i32"}},
+                {integer_literal_token{"1337"}},
+            {right_parenthesis_token{}},
+        {right_parenthesis_token{}},
+
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::condition>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [cond, pos] = get_success(result);
+    CHECK(cond.branches.size() == 2);
+    CHECK(pos == tokens.end());
+}
+
 TEST_CASE("can parse identifier expression")
 {
     const std::vector<token> tokens = { {identifier_token{"name"}} };
@@ -173,6 +217,28 @@ TEST_CASE("can parse complex evaluation")
     REQUIRE(inner_eval_2.arguments.size() == 1);
     REQUIRE(ast::holds<ast::reference>(inner_eval_2.arguments.at(0)));
     CHECK(ast::get<ast::reference>(inner_eval_2.arguments.at(0)).name == "arg2");
+}
+
+TEST_CASE("can parse boolean true literal")
+{
+    const std::vector<token> tokens = { {boolean_literal_token{"true"}} };
+    const auto parser = make_parser<ast::boolean>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [boolean, pos] = get_success(result);
+    CHECK(pos == tokens.cend());
+    CHECK(boolean.value == true);
+}
+
+TEST_CASE("can parse boolean false literal")
+{
+    const std::vector<token> tokens = { {boolean_literal_token{"false"}} };
+    const auto parser = make_parser<ast::boolean>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto [boolean, pos] = get_success(result);
+    CHECK(pos == tokens.cend());
+    CHECK(boolean.value == false);
 }
 
 TEST_CASE("can parse 32 bit integer literal")

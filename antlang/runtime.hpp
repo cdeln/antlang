@@ -22,7 +22,8 @@ struct structure
 
 using value_variant_base =
     std::variant<
-         int8_t,  int16_t,  int32_t,  int64_t,
+        bool,
+        int8_t,  int16_t,  int32_t,  int64_t,
         uint8_t, uint16_t, uint32_t, uint64_t,
         flt32_t, flt64_t,
         structure
@@ -35,13 +36,15 @@ struct value_variant : value_variant_base
 
 struct evaluation;
 struct construction;
+struct condition;
 
 using expression_base =
     std::variant<
         value_variant,
         value_variant*,
         std::unique_ptr<evaluation>,
-        std::unique_ptr<construction>
+        std::unique_ptr<construction>,
+        std::unique_ptr<condition>
     >;
 
 struct expression : expression_base
@@ -75,6 +78,11 @@ struct construction
         : prototype{prototype}
     {
     }
+};
+
+struct condition
+{
+    std::vector<std::pair<expression, expression>> branches;
 };
 
 struct program

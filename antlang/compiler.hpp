@@ -84,6 +84,11 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::evaluation const& eval);
 
+compiler_result<std::unique_ptr<runtime::condition>>
+compile(compiler_environment const& env,
+        compiler_scope const& scope,
+        ast::condition const& cond);
+
 compiler_result<runtime::expression>
 compile(compiler_environment const& env,
         compiler_scope const& scope,

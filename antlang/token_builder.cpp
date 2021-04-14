@@ -53,6 +53,22 @@ token_alternative_builder<identifier_token>::build(std::string const& name) cons
 
 template <>
 token_variant
+token_alternative_builder<boolean_literal_token>::build(std::string const& value) const
+{
+    if (!detail::matches(value, boolean_literal_token::pattern))
+    {
+        std::stringstream message;
+        message << "Value "
+                << quote(value)
+                << " passed to build does not match boolean literal token pattern "
+                << quote(boolean_literal_token::pattern);
+        throw token_pattern_mismatch_error(message.str());
+    }
+    return boolean_literal_token{value};
+}
+
+template <>
+token_variant
 token_alternative_builder<integer_literal_token>::build(std::string const& value) const
 {
     if (!detail::matches(value, integer_literal_token::pattern))
@@ -94,8 +110,10 @@ template class token_alternative_builder<left_parenthesis_token>;
 template class token_alternative_builder<right_parenthesis_token>;
 template class token_alternative_builder<function_token>;
 template class token_alternative_builder<structure_token>;
-template class token_alternative_builder<integer_literal_token>;
+template class token_alternative_builder<condition_token>;
 template class token_alternative_builder<floating_point_literal_token>;
+template class token_alternative_builder<integer_literal_token>;
+template class token_alternative_builder<boolean_literal_token>;
 template class token_alternative_builder<identifier_token>;
 template class token_alternative_builder<end_of_input_token>;
 

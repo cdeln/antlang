@@ -53,6 +53,8 @@ struct literal
     token_context context;
 };
 
+using boolean = literal<bool>;
+
 using i8  = literal<int8_t>;
 using i16 = literal<int16_t>;
 using i32 = literal<int32_t>;
@@ -68,6 +70,7 @@ using f64 = literal<flt64_t>;
 
 using literal_variant =
     std::variant<
+        boolean,
         i8, i16, i32, i64,
         u8, u16, u32, u64,
         f32, f64
@@ -86,13 +89,16 @@ struct reference
     token_context context;
 };
 
+struct branch;
+struct condition;
 struct evaluation;
 
 using expression =
     std::variant<
         reference,
         literal_variant,
-        evaluation
+        evaluation,
+        condition
     >;
 
 struct evaluation
@@ -100,6 +106,18 @@ struct evaluation
     std::string function;
     std::vector<expression> arguments;
     token_context context;
+};
+
+struct condition
+{
+    std::vector<branch> branches;
+    token_context context;
+};
+
+struct branch
+{
+    expression check;
+    expression value;
 };
 
 struct function
@@ -133,16 +151,17 @@ struct name_of
     static constexpr auto const value = T::name;
 };
 
-template <> struct name_of<i8>  { static constexpr auto const value = "i8"; };
-template <> struct name_of<i16> { static constexpr auto const value = "i16"; };
-template <> struct name_of<i32> { static constexpr auto const value = "i32"; };
-template <> struct name_of<i64> { static constexpr auto const value = "i64"; };
-template <> struct name_of<u8>  { static constexpr auto const value = "u8"; };
-template <> struct name_of<u16> { static constexpr auto const value = "u16"; };
-template <> struct name_of<u32> { static constexpr auto const value = "u32"; };
-template <> struct name_of<u64> { static constexpr auto const value = "u64"; };
-template <> struct name_of<f32> { static constexpr auto const value = "f32"; };
-template <> struct name_of<f64> { static constexpr auto const value = "f64"; };
+template <> struct name_of<boolean>  { static constexpr auto const value = "bool"; };
+template <> struct name_of<i8>       { static constexpr auto const value = "i8";   };
+template <> struct name_of<i16>      { static constexpr auto const value = "i16";  };
+template <> struct name_of<i32>      { static constexpr auto const value = "i32";  };
+template <> struct name_of<i64>      { static constexpr auto const value = "i64";  };
+template <> struct name_of<u8>       { static constexpr auto const value = "u8";   };
+template <> struct name_of<u16>      { static constexpr auto const value = "u16";  };
+template <> struct name_of<u32>      { static constexpr auto const value = "u32";  };
+template <> struct name_of<u64>      { static constexpr auto const value = "u64";  };
+template <> struct name_of<f32>      { static constexpr auto const value = "f32";  };
+template <> struct name_of<f64>      { static constexpr auto const value = "f64";  };
 
 template <> struct name_of<literal_variant> { static constexpr auto value = "literal";    };
 template <> struct name_of<reference>       { static constexpr auto value = "reference";  };
@@ -150,6 +169,8 @@ template <> struct name_of<parameter>       { static constexpr auto value = "par
 template <> struct name_of<evaluation>      { static constexpr auto value = "evaluation"; };
 template <> struct name_of<expression>      { static constexpr auto value = "expression"; };
 template <> struct name_of<function>        { static constexpr auto value = "function";   };
+template <> struct name_of<branch>          { static constexpr auto value = "branch";     };
+template <> struct name_of<condition>       { static constexpr auto value = "condition";  };
 template <> struct name_of<structure>       { static constexpr auto value = "structure";  };
 template <> struct name_of<statement>       { static constexpr auto value = "statement";  };
 template <> struct name_of<program>         { static constexpr auto value = "program";    };

@@ -13,6 +13,49 @@
 namespace ant
 {
 
+template <typename T>
+void set_stream_locale(std::istream& in)
+{
+};
+
+template <typename T>
+void set_stream_locale(std::ostream& out)
+{
+};
+
+template <>
+void set_stream_locale<bool>(std::istream& in);
+
+template <>
+void set_stream_locale<bool>(std::ostream& out);
+
+template <typename T>
+struct locale
+{
+    T value;
+
+    locale() = default;
+
+    locale(T value) : value{value} {}
+
+    operator T() const
+    {
+        return value;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, locale const& x)
+    {
+        set_stream_locale<T>(out);
+        return out << x.value;
+    }
+
+    friend std::istream& operator>>(std::istream& in, locale& x)
+    {
+        set_stream_locale<T>(in);
+        return in >> x.value;
+    }
+};
+
 template <class Literal, class Token>
 struct parser<literal_rule<Literal, Token>>
 {
@@ -37,12 +80,13 @@ struct parser<literal_rule<Literal, Token>>
             return parser_failure{message.str(), pos->context};
         }
         const auto alternative = std::get<Token>(pos->variant);
-        static_assert(std::is_same_v<Token, integer_literal_token> ||
+        static_assert(std::is_same_v<Token, boolean_literal_token> ||
+                      std::is_same_v<Token, integer_literal_token> ||
                       std::is_same_v<Token, floating_point_literal_token>);
         try
         {
             return parser_success<Literal>{
-                {boost::lexical_cast<value_type>(alternative.value)},
+                {boost::lexical_cast<locale<value_type>>(alternative.value)},
                 pos + 1
             };
         }

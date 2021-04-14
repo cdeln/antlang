@@ -21,6 +21,12 @@ struct token_type
 };
 
 template <>
+struct token_type<ast::literal<bool>>
+{
+    using type = boolean_literal_token;
+};
+
+template <>
 struct token_type<ast::literal<float>>
 {
     using type = floating_point_literal_token;
@@ -61,6 +67,17 @@ struct ast_rule<ast::literal<T>> :
     >
 {};
 
+template <>
+struct ast_rule<ast::literal<bool>> :
+    rule_spec<
+        literal_rule<
+            ast::literal<bool>,
+            detail::token_type_t<ast::literal<bool>>
+        >,
+        ast::literal<bool>
+    >
+{};
+
 template <typename T>
 struct rule_of<ast::literal<T>>
 {
@@ -71,6 +88,7 @@ template <>
 struct ast_rule<ast::literal_variant> :
     rule_spec<
         alternative<
+            ast::boolean,
             ast::i8, ast::i16, ast::i32, ast::i64,
             ast::u8, ast::u16, ast::u32, ast::u64,
             ast::f32, ast::f64
@@ -167,7 +185,8 @@ struct ast_rule<ast::expression> :
         alternative<
             ast::reference,
             ast::literal_variant,
-            ast::evaluation
+            ast::evaluation,
+            ast::condition
         >,
         ast::expression
     >
@@ -177,6 +196,46 @@ template <>
 struct rule_of<ast::expression>
 {
     using type = ast_rule<ast::expression>;
+};
+
+template <>
+struct ast_rule<ast::branch> :
+    rule_spec<
+        sequence<
+            left_parenthesis_token,
+            ast::expression,
+            ast::expression,
+            right_parenthesis_token
+        >,
+        ast::branch
+    >
+{};
+
+template <>
+struct rule_of<ast::branch>
+{
+    using type = ast_rule<ast::branch>;
+};
+
+template <>
+struct ast_rule<ast::condition> :
+    rule_spec<
+        sequence<
+            left_parenthesis_token,
+            condition_token,
+            repetition<
+                ast::branch,
+                right_parenthesis_token
+            >
+        >,
+        ast::condition
+    >
+{};
+
+template <>
+struct rule_of<ast::condition>
+{
+    using type = ast_rule<ast::condition>;
 };
 
 template <>

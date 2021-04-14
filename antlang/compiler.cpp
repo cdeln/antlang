@@ -2,6 +2,7 @@
 
 #include "formatting.hpp"
 
+#include <cassert>
 #include <sstream>
 
 namespace ant
@@ -116,6 +117,12 @@ struct expression_prototype_getter
     {
         return runtime::execute(*ctor);
     }
+
+    runtime::value_variant operator()(std::unique_ptr<runtime::condition> const& cond) const
+    {
+        assert(!cond->branches.empty());
+        return get_evaluation_prototype(cond->branches.front().second);
+    }
 };
 
 runtime::value_variant
@@ -188,6 +195,72 @@ compile(compiler_environment const& env,
     return std::move(result);
 }
 
+compiler_result<std::unique_ptr<runtime::condition>>
+compile(compiler_environment const& env,
+        compiler_scope const& scope,
+        ast::condition const& cond)
+{
+    if (cond.branches.size() < 2)
+    {
+        return compiler_failure{"Condition have less than 2 branches", cond.context};
+    }
+
+    auto compiled_condition = std::make_unique<runtime::condition>();
+    compiled_condition->branches.reserve(cond.branches.size());
+
+    auto compile_branch = [&env, &scope](auto const& branch)
+    {
+        auto check = compile(env, scope, branch.check);
+        auto value = compile(env, scope, branch.value);
+        return std::make_pair(std::move(check), std::move(value));
+    };
+
+    runtime::value_variant result_type;
+
+    for (size_t i = 0; i < cond.branches.size(); ++i)
+    {
+        auto const& branch = cond.branches.at(i);
+        auto [check, value] = compile_branch(branch);
+
+        if (is_failure(check))
+        {
+            return get_failure(check);
+        }
+        if (is_failure(value))
+        {
+            return get_failure(value);
+        }
+
+        runtime::expression& check_expr = get_success(check);
+
+        if (!expression_type_matches(check_expr, bool{}))
+        {
+            return compiler_failure{
+                "Condition branch check expression must be of boolean type",
+                 ast::get_context(branch.check)
+            };
+        }
+
+        runtime::expression& value_expr = get_success(value);
+
+        if (i == 0)
+        {
+            result_type = get_evaluation_prototype(value_expr);
+        }
+        else if (!expression_type_matches(value_expr, result_type))
+        {
+            return compiler_failure{
+                "Conflicting result type of conditional expression",
+                 ast::get_context(branch.value)
+            };
+        }
+
+        compiled_condition->branches.emplace_back(std::move(check_expr), std::move(value_expr));
+    }
+
+    return std::move(compiled_condition);
+}
+
 struct expression_compiler
 {
     compiler_environment const& env;
@@ -217,6 +290,20 @@ struct expression_compiler
     operator()(ast::evaluation const& eval)
     {
         compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+        if (is_success(result))
+        {
+            return std::move(get_success(result));
+        }
+        else
+        {
+            return std::move(get_failure(result));
+        }
+    }
+
+    compiler_result<runtime::expression>
+    operator()(ast::condition const& cond)
+    {
+        compiler_result<std::unique_ptr<runtime::condition>> result = compile(env, scope, cond);
         if (is_success(result))
         {
             return std::move(get_success(result));

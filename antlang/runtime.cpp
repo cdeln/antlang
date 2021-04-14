@@ -23,6 +23,17 @@ structure execute(construction& ctor)
     return structure{ctor.prototype->parameters};
 }
 
+value_variant execute(condition& cond)
+{
+    for (auto& [check_expr, value_expr] : cond.branches)
+    {
+        if (std::get<bool>(execute(check_expr)))
+        {
+            return execute(value_expr);
+        }
+    }
+}
+
 struct expression_executor
 {
     value_variant operator()(value_variant& value) const
@@ -43,6 +54,11 @@ struct expression_executor
     value_variant operator()(std::unique_ptr<construction>& ctor) const
     {
         return execute(*ctor);
+    }
+
+    value_variant operator()(std::unique_ptr<condition>& cond) const
+    {
+        return execute(*cond);
     }
 };
 

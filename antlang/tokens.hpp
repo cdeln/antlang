@@ -30,6 +30,12 @@ struct structure_token
     static constexpr char pattern[] = "structure";
 };
 
+struct condition_token
+{
+    static constexpr char name[] = "condition";
+    static constexpr char pattern[] = "condition";
+};
+
 struct floating_point_literal_token
 {
     static constexpr char name[] = "floating-point-literal";
@@ -41,6 +47,13 @@ struct integer_literal_token
 {
     static constexpr char name[] = "integer-literal";
     static constexpr char pattern[] = R"([0-9]+)";
+    std::string value;
+};
+
+struct boolean_literal_token
+{
+    static constexpr char name[] = "boolean-literal";
+    static constexpr char pattern[] = "true|false";
     std::string value;
 };
 
@@ -63,8 +76,10 @@ using token_variant =
         right_parenthesis_token,
         function_token,
         structure_token,
+        condition_token,
         floating_point_literal_token,
         integer_literal_token,
+        boolean_literal_token,
         identifier_token,
         end_of_input_token
     >;
@@ -88,6 +103,5 @@ std::string token_name()
 }
 
 std::string token_name(token_variant const& variant);
-
 
 } // namespace ant
