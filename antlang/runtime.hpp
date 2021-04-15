@@ -97,5 +97,7 @@ structure execute(construction& ctor);
 
 value_variant execute(expression& expr);
 
+value_variant execute(condition& expr);
+
 }  // namespace runtime
 }  // namespace ant
