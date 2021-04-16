@@ -374,29 +374,38 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     CHECK(argument == &compiled->parameters.at(0));
 }
 
-TEST_CASE_FIXTURE(fixture, "compile condition with less than 2 branches returns failure")
+TEST_CASE_FIXTURE(fixture, "compile condition with no branches returns failure")
 {
-    ast::branch branch = {ast::literal<bool>{true}, ast::literal<int32_t>{}};
-    ast::condition cond = {{branch}};
+    ast::expression fallback = ast::literal<int32_t>{};
+    ast::condition cond = {{}, fallback};
     auto result = compile(env, scope, cond);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile condition without fallback returns failure")
 {
-    ast::branch first = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
-    ast::branch second = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
-    ast::condition cond = {{first, second}};
+    ast::branch branch = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    ast::condition cond = {{branch}};
     auto result = compile(env, scope, cond);
     REQUIRE(is_failure(result));
 }
 
-TEST_CASE_FIXTURE(fixture, "compile condition works")
+TEST_CASE_FIXTURE(fixture, "compile with at least one branch and one fallback works")
+{
+    ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+    ast::expression fallback = ast::literal<int32_t>{};
+    ast::condition cond = {{branch}, fallback};
+    auto result = compile(env, scope, cond);
+    REQUIRE(is_success(result));
+}
+
+TEST_CASE_FIXTURE(fixture, "compile condition with multiple branches works")
 {
     ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
     ast::branch second = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    std::vector<ast::branch> branches = {first, second};
     ast::expression fallback = ast::literal<int32_t>{};
-    ast::condition cond = {{first, second}, fallback};
+    ast::condition cond = {branches, fallback};
     auto result = compile(env, scope, cond);
     REQUIRE(is_success(result));
 }

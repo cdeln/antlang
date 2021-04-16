@@ -201,9 +201,9 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::condition const& cond)
 {
-    if (cond.branches.size() < 2)
+    if (cond.branches.empty())
     {
-        return compiler_failure{"Condition have less than 2 branches", cond.context};
+        return compiler_failure{"Condition must have at least 1 branche", cond.context};
     }
 
     auto compiled_condition = std::make_unique<runtime::condition>();
