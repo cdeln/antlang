@@ -133,13 +133,52 @@ get_evaluation_prototype(runtime::expression const& expr)
                       static_cast<runtime::expression_base const&>(expr));
 }
 
+struct type_checker
+{
+    template <typename T1, typename T2,
+              typename = std::enable_if_t<
+                  !(std::is_same_v<T1, runtime::structure> &&
+                    std::is_same_v<T2, runtime::structure>)
+              >
+    >
+    bool operator()(T1 const&, T2 const&) const
+    {
+        return std::is_same_v<T1, T2>;
+    }
+
+    bool operator()(runtime::structure const& x1,
+                    runtime::structure const& x2) const
+    {
+        if (x1.fields.size() != x2.fields.size())
+        {
+            return false;
+        }
+
+        bool is_matching = true;
+
+        for (size_t i = 0; i < x1.fields.size(); ++i)
+        {
+            auto const& f1 = x1.fields.at(i);
+            auto const& f2 = x2.fields.at(i);
+            is_matching &=
+                std::visit(type_checker(),
+                           static_cast<runtime::value_variant_base const&>(f1),
+                           static_cast<runtime::value_variant_base const&>(f2));
+        }
+
+        return is_matching;
+    }
+};
+
 bool expression_type_matches(
     runtime::expression const& expr1,
     runtime::expression const& expr2)
 {
     const runtime::value_variant proto1 = get_evaluation_prototype(expr1);
     const runtime::value_variant proto2 = get_evaluation_prototype(expr2);
-    return proto1.index() == proto2.index();
+    return std::visit(type_checker(),
+                      static_cast<runtime::value_variant_base const&>(proto1),
+                      static_cast<runtime::value_variant_base const&>(proto2));
 }
 
 compiler_result<std::unique_ptr<runtime::evaluation>>
@@ -203,7 +242,7 @@ compile(compiler_environment const& env,
 {
     if (cond.branches.empty())
     {
-        return compiler_failure{"Condition must have at least 1 branche", cond.context};
+        return compiler_failure{"Condition must have at least 1 branch", cond.context};
     }
 
     auto compiled_condition = std::make_unique<runtime::condition>();
@@ -266,7 +305,17 @@ compile(compiler_environment const& env,
         return std::move(get_failure(compiled_fallback));
     }
 
-    compiled_condition->fallback = std::move(get_success(compiled_fallback));
+    auto& fallback_expr = get_success(compiled_fallback);
+
+    if (!expression_type_matches(fallback_expr, result_type))
+    {
+        return compiler_failure{
+            "Conflicting result type of conditional expression",
+             ast::get_context(cond.fallback)
+        };
+    }
+
+    compiled_condition->fallback = std::move(fallback_expr);
 
     return std::move(compiled_condition);
 }

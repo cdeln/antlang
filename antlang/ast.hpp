@@ -38,6 +38,13 @@ get_context(T&& x)
     return x.context;
 }
 
+template <typename T>
+token_context
+get_context(recursive_wrapper<T> const& x)
+{
+    return get_context(static_cast<T const&>(x));
+}
+
 template <typename... Ts>
 token_context
 get_context(std::variant<Ts...> const& v)

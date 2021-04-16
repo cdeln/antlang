@@ -159,6 +159,20 @@ TEST_CASE("expression_type_matches returns true for value_variants with same und
     CHECK(expression_type_matches(x1, x2));
 }
 
+TEST_CASE("expression_type_matches returns false for value_variants with different structure type")
+{
+    const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
+    const runtime::value_variant x2 = runtime::structure{{int64_t{37}}};
+    bool tmp = expression_type_matches(x1, x2);
+}
+
+TEST_CASE("expression_type_matches returns true for value_variants with isomorphic structure type")
+{
+    const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
+    const runtime::value_variant x2 = runtime::structure{{int32_t{37}}};
+    CHECK(expression_type_matches(x1, x2));
+}
+
 TEST_CASE_FIXTURE(fixture,
     "compile evaluation of function with non-matching argument-parameter types returns failure")
 {
@@ -408,6 +422,29 @@ TEST_CASE_FIXTURE(fixture, "compile condition with multiple branches works")
     ast::condition cond = {branches, fallback};
     auto result = compile(env, scope, cond);
     REQUIRE(is_success(result));
+}
+
+TEST_CASE_FIXTURE(fixture, "compile condition with conflicting returns values fails")
+{
+    SUBCASE("when branch and fallback types differ")
+    {
+        ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+        ast::expression fallback = ast::literal<int64_t>{};
+        ast::condition cond = {{branch}, fallback};
+        auto result = compile(env, scope, cond);
+        REQUIRE(is_failure(result));
+    }
+
+    SUBCASE("when branch types differ")
+    {
+        ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+        ast::branch second = {ast::literal<bool>{true},  ast::literal<int64_t>{}};
+        std::vector<ast::branch> branches = {first, second};
+        ast::expression fallback = ast::literal<int32_t>{};
+        ast::condition cond = {branches, fallback};
+        auto result = compile(env, scope, cond);
+        REQUIRE(is_failure(result));
+    }
 }
 
 struct prog_fixture : fixture
