@@ -223,10 +223,13 @@ struct ast_rule<ast::condition> :
         sequence<
             left_parenthesis_token,
             condition_token,
+            left_parenthesis_token,
             repetition<
                 ast::branch,
                 right_parenthesis_token
-            >
+            >,
+            ast::expression,
+            right_parenthesis_token
         >,
         ast::condition
     >

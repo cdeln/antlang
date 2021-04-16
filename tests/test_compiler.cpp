@@ -374,6 +374,33 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     CHECK(argument == &compiled->parameters.at(0));
 }
 
+TEST_CASE_FIXTURE(fixture, "compile condition with less than 2 branches returns failure")
+{
+    ast::branch branch = {ast::literal<bool>{true}, ast::literal<int32_t>{}};
+    ast::condition cond = {{branch}};
+    auto result = compile(env, scope, cond);
+    REQUIRE(is_failure(result));
+}
+
+TEST_CASE_FIXTURE(fixture, "compile condition without fallback returns failure")
+{
+    ast::branch first = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    ast::branch second = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+    ast::condition cond = {{first, second}};
+    auto result = compile(env, scope, cond);
+    REQUIRE(is_failure(result));
+}
+
+TEST_CASE_FIXTURE(fixture, "compile condition works")
+{
+    ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+    ast::branch second = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    ast::expression fallback = ast::literal<int32_t>{};
+    ast::condition cond = {{first, second}, fallback};
+    auto result = compile(env, scope, cond);
+    REQUIRE(is_success(result));
+}
+
 struct prog_fixture : fixture
 {
     std::unique_ptr<runtime::function> i32;

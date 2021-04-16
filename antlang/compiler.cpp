@@ -27,6 +27,7 @@ template bool is_failure(compiler_result<runtime::value_variant*> const&);
 template bool is_failure(compiler_result<std::unique_ptr<runtime::function>> const&);
 template bool is_failure(compiler_result<std::unique_ptr<runtime::structure>> const&);
 template bool is_failure(compiler_result<std::unique_ptr<runtime::evaluation>> const&);
+template bool is_failure(compiler_result<std::unique_ptr<runtime::condition>> const&);
 
 template <typename T>
 T& get_success(compiler_result<T>& result)
@@ -257,6 +258,15 @@ compile(compiler_environment const& env,
 
         compiled_condition->branches.emplace_back(std::move(check_expr), std::move(value_expr));
     }
+
+    auto compiled_fallback = compile(env, scope, cond.fallback);
+
+    if (is_failure(compiled_fallback))
+    {
+        return std::move(get_failure(compiled_fallback));
+    }
+
+    compiled_condition->fallback = std::move(get_success(compiled_fallback));
 
     return std::move(compiled_condition);
 }

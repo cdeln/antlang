@@ -99,11 +99,16 @@ TEST_CASE("can parse condition")
         {left_parenthesis_token{}},
         {condition_token{}},
 
+        // cases
+        {left_parenthesis_token{}},
+
+        // first branch
         {left_parenthesis_token{}},
             {identifier_token{"boolean-condition"}},
             {identifier_token{"reference-name"}},
         {right_parenthesis_token{}},
 
+        // second branch
         {left_parenthesis_token{}},
             {boolean_literal_token{"true"}},
             {left_parenthesis_token{}},
@@ -111,6 +116,12 @@ TEST_CASE("can parse condition")
                 {integer_literal_token{"1337"}},
             {right_parenthesis_token{}},
         {right_parenthesis_token{}},
+
+        // end of cases
+        {right_parenthesis_token{}},
+
+        // fallback
+        {identifier_token{"i32"}},
 
         {right_parenthesis_token{}}
     };

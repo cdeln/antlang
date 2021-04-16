@@ -19,19 +19,26 @@ namespace ant
 template <typename Target, typename Source>
 Target convert(Source&& x)
 {
-    return Source{std::forward<Source>(x)};
+    return Target{std::forward<Source>(x)};
 }
 
 template <typename Struct, typename... Ts, size_t... Is>
 Struct convert_impl(std::tuple<Ts...>&& x, std::index_sequence<Is...>)
 {
-    return std::invoke([](auto&&... xs) -> Struct { return {xs...}; }, std::get<Is>(x)...);
+    const auto f = [](auto&&... xs) -> Struct { return {std::forward<decltype(xs)>(xs)...}; };
+    return std::invoke(f, std::get<Is>(x)...);
 }
 
 template <typename Struct, typename... Ts>
 Struct convert(std::tuple<Ts...>&& x)
 {
     return convert_impl<Struct>(std::move(x), std::make_index_sequence<sizeof...(Ts)>());
+}
+
+template <typename Struct, typename T>
+Struct convert(std::tuple<T>&& x)
+{
+    return convert<Struct>(std::move(std::get<0>(x)));
 }
 
 template <typename Attribute, typename = void>

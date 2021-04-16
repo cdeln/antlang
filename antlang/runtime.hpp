@@ -83,6 +83,7 @@ struct construction
 struct condition
 {
     std::vector<std::pair<expression, expression>> branches;
+    expression fallback;
 };
 
 struct program

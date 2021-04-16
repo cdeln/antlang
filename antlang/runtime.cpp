@@ -32,6 +32,7 @@ value_variant execute(condition& cond)
             return execute(value_expr);
         }
     }
+    return execute(cond.fallback);
 }
 
 struct expression_executor

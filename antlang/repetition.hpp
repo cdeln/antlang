@@ -20,6 +20,8 @@ struct repetition :
         >
     >
 {
+    static_assert(std::is_same_v<attribute_of_t<rule_of_t<End>>, none>,
+                  "End pattern of repetition rule must be non-attributed");
 };
 
 } // namespace ant

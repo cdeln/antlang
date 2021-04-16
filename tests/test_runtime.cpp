@@ -97,20 +97,28 @@ TEST_CASE("execute condition with literal check and value type")
     {
         cond.branches.push_back({true,  int32_t{13}});
         cond.branches.push_back({false, int32_t{37}});
-        auto value= execute(cond);
+        auto value = execute(cond);
         REQUIRE(std::holds_alternative<int32_t>(value));
         CHECK(std::get<int32_t>(value) == 13);
-        REQUIRE(std::holds_alternative<int32_t>(value));
     }
 
     SUBCASE("when second condition true")
     {
         cond.branches.push_back({false, int32_t{13}});
         cond.branches.push_back({true,  int32_t{37}});
-        auto value= execute(cond);
+        auto value = execute(cond);
         REQUIRE(std::holds_alternative<int32_t>(value));
         CHECK(std::get<int32_t>(value) == 37);
+    }
+
+    SUBCASE("fallback when no condition are true")
+    {
+        cond.branches.push_back({false, int32_t{13}});
+        cond.branches.push_back({false,  int32_t{37}});
+        cond.fallback = int32_t{1337};
+        auto value = execute(cond);
         REQUIRE(std::holds_alternative<int32_t>(value));
+        CHECK(std::get<int32_t>(value) == 1337);
     }
 }
 

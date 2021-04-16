@@ -2,9 +2,9 @@
 
 #include "fundamental_types.hpp"
 #include "tokens.hpp"
+#include "recursive_variant.hpp"
 
 #include <string>
-#include <variant>
 #include <vector>
 
 namespace ant
@@ -111,6 +111,7 @@ struct evaluation
 struct condition
 {
     std::vector<branch> branches;
+    recursive_wrapper<expression> fallback;
     token_context context;
 };
 
