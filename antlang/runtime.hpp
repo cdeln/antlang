@@ -3,8 +3,8 @@
 #include "fundamental_types.hpp"
 
 #include <algorithm>
-#include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -34,6 +34,7 @@ struct value_variant : value_variant_base
     using value_variant_base::value_variant_base;
 };
 
+struct operation;
 struct evaluation;
 struct construction;
 struct condition;
@@ -42,6 +43,7 @@ using expression_base =
     std::variant<
         value_variant,
         value_variant*,
+        std::unique_ptr<operation>,
         std::unique_ptr<evaluation>,
         std::unique_ptr<construction>,
         std::unique_ptr<condition>
@@ -56,6 +58,47 @@ struct function
 {
     std::vector<value_variant> parameters;
     expression value;
+};
+
+struct operation
+{
+    function* blueprint;
+
+    operation(function* blueprint);
+
+    virtual ~operation() = default;
+
+    virtual value_variant execute() = 0;
+};
+
+template <template <typename> class Operator, typename Type>
+struct fundamental_operation final : operation
+{
+    fundamental_operation(function* blueprint);
+
+    value_variant execute() override;
+};
+
+struct arithmetic_error : public std::runtime_error
+{
+    using runtime_error::runtime_error;
+};
+
+using std::plus;
+using std::minus;
+using std::multiplies;
+
+template <typename T>
+struct divides
+{
+    T operator()(T numerator, T denominator)
+    {
+        if (denominator == T{0})
+        {
+            throw arithmetic_error("division by zero");
+        }
+        return numerator / denominator;
+    }
 };
 
 struct evaluation

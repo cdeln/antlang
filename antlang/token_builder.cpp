@@ -30,7 +30,7 @@ token_alternative_builder<Token>::build(std::string const& data) const
                 << quote(data)
                 << " passed to build does not match builder token pattern "
                 << quote(Token::pattern);
-        throw token_pattern_mismatch_error(message.str());
+        throw token_pattern_mismatch_error(message.str(), {});
     }
     return Token{};
 }
@@ -46,7 +46,7 @@ token_alternative_builder<identifier_token>::build(std::string const& name) cons
                 << quote(name)
                 << " passed to build does not match identifier token pattern "
                 << quote(identifier_token::pattern);
-        throw token_pattern_mismatch_error(message.str());
+        throw token_pattern_mismatch_error(message.str(), {});
     }
     return identifier_token{name};
 }
@@ -62,7 +62,7 @@ token_alternative_builder<boolean_literal_token>::build(std::string const& value
                 << quote(value)
                 << " passed to build does not match boolean literal token pattern "
                 << quote(boolean_literal_token::pattern);
-        throw token_pattern_mismatch_error(message.str());
+        throw token_pattern_mismatch_error(message.str(), {});
     }
     return boolean_literal_token{value};
 }
@@ -78,7 +78,7 @@ token_alternative_builder<integer_literal_token>::build(std::string const& value
                 << quote(value)
                 << " passed to build does not match integer literal token pattern "
                 << quote(integer_literal_token::pattern);
-        throw token_pattern_mismatch_error(message.str());
+        throw token_pattern_mismatch_error(message.str(), {});
     }
     return integer_literal_token{value};
 }
@@ -94,7 +94,7 @@ token_alternative_builder<floating_point_literal_token>::build(std::string const
                 << quote(value)
                 << " passed to build does not match floating point literal token pattern "
                 << quote(floating_point_literal_token::pattern);
-        throw token_pattern_mismatch_error(message.str());
+        throw token_pattern_mismatch_error(message.str(), {});
     }
     return floating_point_literal_token{value};
 }
