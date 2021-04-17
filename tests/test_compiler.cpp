@@ -145,31 +145,46 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of nullary function")
     CHECK(compiled->arguments.empty());
 }
 
-TEST_CASE("expression_type_matches returns false for value_variants with different underlying type")
+TEST_CASE("expression_type_matches returns false for different fundamental type")
 {
     const runtime::value_variant val1 = int32_t{0};
     const runtime::value_variant val2 = int64_t{0};
     CHECK(!expression_type_matches(val1, val2));
 }
 
-TEST_CASE("expression_type_matches returns true for value_variants with same underlying type")
+TEST_CASE("expression_type_matches returns true for same fundamental types")
 {
     const runtime::value_variant x1 = int32_t{13};
     const runtime::value_variant x2 = int32_t{37};
     CHECK(expression_type_matches(x1, x2));
 }
 
-TEST_CASE("expression_type_matches returns false for value_variants with different structure type")
+TEST_CASE("expression_type_matches returns false for different structure types")
 {
     const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
     const runtime::value_variant x2 = runtime::structure{{int64_t{37}}};
-    bool tmp = expression_type_matches(x1, x2);
+    REQUIRE(!expression_type_matches(x1, x2));
 }
 
-TEST_CASE("expression_type_matches returns true for value_variants with isomorphic structure type")
+TEST_CASE("expression_type_matches returns true for simple isomorphic structure types")
 {
     const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
     const runtime::value_variant x2 = runtime::structure{{int32_t{37}}};
+    CHECK(expression_type_matches(x1, x2));
+}
+
+TEST_CASE("expression_type_matches returns false for different recursive structure types")
+{
+
+    const runtime::value_variant x1 = runtime::structure{{runtime::structure{{int32_t{13}}}}};
+    const runtime::value_variant x2 = runtime::structure{{runtime::structure{{int64_t{37}}}}};
+    CHECK(!expression_type_matches(x1, x2));
+}
+
+TEST_CASE("expression_type_matches returns true for isomorphic recursive structure types")
+{
+    const runtime::value_variant x1 = runtime::structure{{runtime::structure{{int32_t{13}}}}};
+    const runtime::value_variant x2 = runtime::structure{{runtime::structure{{int32_t{37}}}}};
     CHECK(expression_type_matches(x1, x2));
 }
 
