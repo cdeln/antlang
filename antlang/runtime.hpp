@@ -3,6 +3,7 @@
 #include "fundamental_types.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <variant>

@@ -8,93 +8,77 @@
 namespace ant
 {
 
-template <typename T>
-bool is_success(compiler_result<T> const& result)
+exceptional<function_query_result, nullptr_t>
+find_function(compiler_environment const& env,
+              std::string const& name,
+              std::vector<std::string> const& signature)
 {
-    return std::holds_alternative<T>(result);
+    auto it = env.functions.find(name);
+    if (it == env.functions.end())
+    {
+        return nullptr;
+    }
+    for (auto const& [meta, func] : it->second)
+    {
+        if (meta.parameter_types == signature)
+        {
+            return function_query_result{meta.return_type, func};
+        }
+    }
+    return nullptr;
 }
-
-template <typename T>
-bool is_failure(compiler_result<T> const& result)
-{
-    return !is_success(result);
-}
-
-template bool is_success(compiler_result<runtime::value_variant> const&);
-
-template bool is_failure(compiler_result<runtime::value_variant> const&);
-template bool is_failure(compiler_result<runtime::value_variant*> const&);
-template bool is_failure(compiler_result<std::unique_ptr<runtime::function>> const&);
-template bool is_failure(compiler_result<std::unique_ptr<runtime::structure>> const&);
-template bool is_failure(compiler_result<std::unique_ptr<runtime::evaluation>> const&);
-template bool is_failure(compiler_result<std::unique_ptr<runtime::condition>> const&);
-
-template <typename T>
-T& get_success(compiler_result<T>& result)
-{
-    return std::get<T>(result);
-}
-
-template <typename T>
-T const& get_success(compiler_result<T> const& result)
-{
-    return std::get<T>(result);
-}
-
-template <typename T>
-compiler_failure& get_failure(compiler_result<T>& result)
-{
-    return std::get<compiler_failure>(result);
-}
-
-template <typename T>
-compiler_failure const& get_failure(compiler_result<T> const& result)
-{
-    return std::get<compiler_failure>(result);
-}
-
-template compiler_failure const& get_failure(compiler_status const& status);
 
 struct literal_compiler
 {
+    compiler_environment const& env;
+
     template <typename T>
-    runtime::value_variant operator()(ast::literal<T> literal)
+    compiler_expect<runtime::value_variant>
+    operator()(ast::literal<T> literal)
     {
-        return literal.value;
+        constexpr auto type_name = ast::name_of_v<ast::literal<T>>;
+        auto it = env.prototypes.find(type_name);
+        if (it == env.prototypes.end())
+        {
+            std::stringstream message;
+            message << "Missing prototype for literal " << quote(type_name);
+            return compiler_failure{message.str(), literal.context};
+        }
+        return compiler_result<runtime::value_variant>{literal.value, type_name};
     }
 };
 
-runtime::value_variant
-compile(ast::literal_variant const& literal)
+compiler_expect<runtime::value_variant>
+compile(compiler_environment const& env, ast::literal_variant const& literal)
 {
-    return ast::visit(literal_compiler(), literal);
+    return ast::visit(literal_compiler{env}, literal);
 }
 
-compiler_result<runtime::value_variant>
+compiler_expect<runtime::value_variant>
 compile(compiler_environment const& env, ast::parameter const& param)
 {
-    auto it = env.functions.find(param.type);
-    if (it == env.functions.end())
+    auto it = env.prototypes.find(param.type);
+    if (it == env.prototypes.end())
     {
         std::stringstream message;
         message << "Undefined parameter type " << quote(param.type);
         return compiler_failure{message.str(), param.context};
     }
-    runtime::function* type = it->second;
-    return get_evaluation_prototype(type->value);
+    auto const& prototype = it->second;
+    return compiler_result<runtime::value_variant>{*prototype, param.type};
 }
 
-compiler_result<runtime::value_variant*>
+compiler_expect<runtime::value_variant*>
 compile(compiler_scope const& scope, ast::reference const& ref)
 {
-    auto param = scope.parameters.find(ref.name);
-    if (param == scope.parameters.end())
+    auto it = scope.parameters.find(ref.name);
+    if (it == scope.parameters.end())
     {
         std::stringstream message;
         message << "Undefined reference to " << quote(ref.name);
         return compiler_failure{message.str(), ref.context};
     }
-    return param->second;
+    return it->second;
 }
 
 struct expression_prototype_getter
@@ -107,6 +91,11 @@ struct expression_prototype_getter
     runtime::value_variant operator()(runtime::value_variant const* param) const
     {
         return *param;
+    }
+
+    runtime::value_variant operator()(std::unique_ptr<runtime::operation> const& op) const
+    {
+        return op->execute();
     }
 
     runtime::value_variant operator()(std::unique_ptr<runtime::evaluation> const& eval) const
@@ -181,50 +170,20 @@ bool expression_type_matches(
                       static_cast<runtime::value_variant_base const&>(proto2));
 }
 
-compiler_result<std::unique_ptr<runtime::evaluation>>
+compiler_expect<std::unique_ptr<runtime::evaluation>>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::evaluation const& eval)
 {
-    auto it = env.functions.find(eval.function);
+    std::vector<compiler_result<runtime::expression>> arguments;
+    arguments.reserve(eval.arguments.size());
 
-    if (it == env.functions.end())
+    for (const auto& arg : eval.arguments)
     {
-        std::stringstream message;
-        message << "Call to undefined function " << quote(eval.function);
-        return compiler_failure{message.str(), eval.context};
-    }
-
-    runtime::function* func = it->second;
-
-    if (eval.arguments.size() != func->parameters.size())
-    {
-        std::stringstream message;
-        message << "Function call argument length does not match function parameter length";
-        return compiler_failure{message.str(), eval.context};
-    }
-
-    auto result = std::make_unique<runtime::evaluation>(func);
-
-    for (size_t i = 0; i < eval.arguments.size(); ++i)
-    {
-        const ast::expression& arg = eval.arguments.at(i);
-        compiler_result<runtime::expression> expr = compile(env, scope, arg);
+        auto expr = compile(env, scope, arg);
         if (is_success(expr))
         {
-            runtime::expression& argument = get_success(expr);
-            runtime::expression const& parameter = func->parameters.at(i);
-            if (expression_type_matches(argument, parameter))
-            {
-                result->arguments.at(i) = std::move(argument);
-            }
-            else
-            {
-                return compiler_failure{
-                    "Function call argument/parameter type mismatch",
-                     ast::get_context(arg)
-                };
-            }
+            arguments.push_back(std::move(get_success(expr)));
         }
         else
         {
@@ -232,10 +191,43 @@ compile(compiler_environment const& env,
         }
     }
 
-    return std::move(result);
+    std::vector<std::string> signature;
+    signature.reserve(eval.arguments.size());
+    std::transform(arguments.begin(), arguments.end(),
+                   std::back_inserter(signature),
+                   [](auto const& arg) { return arg.type; });
+    auto func_query = find_function(env, eval.function, signature);
+    if (is_failure(func_query))
+    {
+        std::stringstream message;
+        message << "Could not find function " << quote(eval.function)
+                << " with parameter type signature (";
+        if (!signature.empty())
+        {
+            for (size_t i = 0; i < signature.size() - 1; ++i)
+            {
+                message << signature.at(i) << " ";
+            }
+            message << signature.back();
+        }
+        message << ")";
+        return compiler_failure{message.str(), eval.context};
+    }
+    auto& [return_type, func_ptr] = get_success(func_query);
+
+    auto result = std::make_unique<runtime::evaluation>(func_ptr);
+    std::transform(std::move_iterator(arguments.begin()),
+                   std::move_iterator(arguments.end()),
+                   result->arguments.begin(),
+                   [](auto&& arg) { return std::move(arg.value); });
+
+    return compiler_result<std::unique_ptr<runtime::evaluation>>{
+        std::move(result),
+        return_type
+    };
 }
 
-compiler_result<std::unique_ptr<runtime::condition>>
+compiler_expect<std::unique_ptr<runtime::condition>>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::condition const& cond)
@@ -255,7 +247,7 @@ compile(compiler_environment const& env,
         return std::make_pair(std::move(check), std::move(value));
     };
 
-    runtime::value_variant result_type;
+    std::string result_type;
 
     for (size_t i = 0; i < cond.branches.size(); ++i)
     {
@@ -271,23 +263,27 @@ compile(compiler_environment const& env,
             return get_failure(value);
         }
 
-        runtime::expression& check_expr = get_success(check);
+        auto& [check_expr, check_type] = get_success(check);
 
-        if (!expression_type_matches(check_expr, bool{}))
+        if (check_type != ast::name_of_v<ast::literal<bool>>)
         {
+            std::stringstream message;
+            message << "Condition branch check expression must be of type "
+                    << quote(ast::name_of_v<ast::literal<bool>>)
+                    << ", but is of type " << quote(check_type);
             return compiler_failure{
-                "Condition branch check expression must be of boolean type",
-                 ast::get_context(branch.check)
+                message.str(),
+                ast::get_context(branch.check)
             };
         }
 
-        runtime::expression& value_expr = get_success(value);
+        auto& [value_expr, value_type] = get_success(value);
 
         if (i == 0)
         {
-            result_type = get_evaluation_prototype(value_expr);
+            result_type = value_type;
         }
-        else if (!expression_type_matches(value_expr, result_type))
+        else if (value_type != result_type)
         {
             return compiler_failure{
                 "Conflicting result type of conditional expression",
@@ -298,16 +294,16 @@ compile(compiler_environment const& env,
         compiled_condition->branches.emplace_back(std::move(check_expr), std::move(value_expr));
     }
 
-    auto compiled_fallback = compile(env, scope, cond.fallback);
+    auto fallback = compile(env, scope, cond.fallback);
 
-    if (is_failure(compiled_fallback))
+    if (is_failure(fallback))
     {
-        return std::move(get_failure(compiled_fallback));
+        return std::move(get_failure(fallback));
     }
 
-    auto& fallback_expr = get_success(compiled_fallback);
+    auto& [fallback_expr, fallback_type] = get_success(fallback);
 
-    if (!expression_type_matches(fallback_expr, result_type))
+    if (fallback_type != result_type)
     {
         return compiler_failure{
             "Conflicting result type of conditional expression",
@@ -317,7 +313,10 @@ compile(compiler_environment const& env,
 
     compiled_condition->fallback = std::move(fallback_expr);
 
-    return std::move(compiled_condition);
+    return compiler_result<std::unique_ptr<runtime::condition>>{
+        std::move(compiled_condition),
+        result_type
+    };
 }
 
 struct expression_compiler
@@ -325,13 +324,14 @@ struct expression_compiler
     compiler_environment const& env;
     compiler_scope const& scope;
 
-    compiler_result<runtime::expression>
+    compiler_expect<runtime::expression>
     operator()(ast::reference const& ref)
     {
-        compiler_result<runtime::value_variant*> result = compile(scope, ref);
+        compiler_expect<runtime::value_variant*> result = compile(scope, ref);
         if (is_success(result))
         {
-            return std::move(get_success(result));
+            auto& [value, type] = get_success(result);
+            return compiler_result<runtime::expression>{std::move(value), std::move(type)};
         }
         else
         {
@@ -339,19 +339,29 @@ struct expression_compiler
         }
     }
 
-    compiler_result<runtime::expression>
-    operator()(ast::literal_variant const& lit)
+    compiler_expect<runtime::expression>
+    operator()(ast::literal_variant const& literal)
     {
-        return compile(lit);
+        compiler_expect<runtime::value_variant> result = compile(env, literal);
+        if (is_success(result))
+        {
+            auto& [value, type] = get_success(result);
+            return compiler_result<runtime::expression>{std::move(value), std::move(type)};
+        }
+        else
+        {
+            return std::move(get_failure(result));
+        }
     }
 
-    compiler_result<runtime::expression>
+    compiler_expect<runtime::expression>
     operator()(ast::evaluation const& eval)
     {
-        compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+        compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
         if (is_success(result))
         {
-            return std::move(get_success(result));
+            auto& [value, type] = get_success(result);
+            return compiler_result<runtime::expression>{std::move(value), std::move(type)};
         }
         else
         {
@@ -359,13 +369,14 @@ struct expression_compiler
         }
     }
 
-    compiler_result<runtime::expression>
+    compiler_expect<runtime::expression>
     operator()(ast::condition const& cond)
     {
-        compiler_result<std::unique_ptr<runtime::condition>> result = compile(env, scope, cond);
+        compiler_expect<std::unique_ptr<runtime::condition>> result = compile(env, scope, cond);
         if (is_success(result))
         {
-            return std::move(get_success(result));
+            auto& [value, type] = get_success(result);
+            return compiler_result<runtime::expression>{std::move(value), std::move(type)};
         }
         else
         {
@@ -374,7 +385,7 @@ struct expression_compiler
     }
 };
 
-compiler_result<runtime::expression>
+compiler_expect<runtime::expression>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::expression const& expr)
@@ -382,28 +393,18 @@ compile(compiler_environment const& env,
     return ast::visit(expression_compiler{env, scope}, expr);
 }
 
-compiler_result<std::unique_ptr<runtime::function>>
-compile(compiler_environment const& env, ast::function const& function)
+exceptional<compiled_function_result, compiler_failure>
+compile(compiler_environment const& env,
+        ast::function const& function)
 {
-    auto it = env.functions.find(function.name);
-
-    if (it != env.functions.end())
-    {
-        std::stringstream message;
-        message << "Redefinition of function " << quote(function.name);
-        return compiler_failure{message.str(), function.context};
-    }
-
-    it = env.functions.find(function.return_type.name);
-
-    if (it == env.functions.end())
+    if (env.prototypes.find(function.return_type.name) == env.prototypes.end())
     {
         std::stringstream message;
         message << "Unknown function return type " << quote(function.return_type.name);
         return compiler_failure{message.str(), function.return_type.context};
     }
 
-    runtime::function const* return_type = it->second;
+    std::vector<std::string> signature;
 
     auto result = std::make_unique<runtime::function>();
     result->parameters.reserve(function.parameters.size());
@@ -413,7 +414,9 @@ compile(compiler_environment const& env, ast::function const& function)
         auto compiled_param = compile(env, param);
         if (is_success(compiled_param))
         {
-            result->parameters.push_back(std::move(get_success(compiled_param)));
+            auto& [value, type] = get_success(compiled_param);
+            signature.push_back(std::move(type));
+            result->parameters.push_back(std::move(value));
         }
         else
         {
@@ -421,57 +424,94 @@ compile(compiler_environment const& env, ast::function const& function)
         }
     }
 
-    compiler_scope scope;
+    auto func_query = find_function(env, function.name, signature);
 
+    if (is_success(func_query))
+    {
+        std::stringstream message;
+        message << "Redefinition of function " << quote(function.name);
+        return compiler_failure{message.str(), function.context};
+    }
+
+    compiler_scope scope;
     for (size_t i = 0; i < result->parameters.size(); ++i)
     {
         std::string param_name = function.parameters.at(i).name;
-        scope.parameters[param_name] = &result->parameters.at(i);
+        scope.parameters[param_name] = {&result->parameters.at(i), signature.at(i)};
     }
-
-    auto compiled_value = compile(env, scope, function.body);
-
-    if (is_success(compiled_value))
+    auto compiled_expr = compile(env, scope, function.body);
+    if (is_success(compiled_expr))
     {
-        result->value = std::move(get_success(compiled_value));
+        auto& [value_expr, value_type] = get_success(compiled_expr);
+        if (value_type != function.return_type.name)
+        {
+            std::stringstream message;
+            message << "Function expression type " << quote(value_type)
+                    << " does not match declared return type " << quote(function.return_type.name);
+            return compiler_failure{
+                message.str(),
+                ast::get_context(function.body)
+            };
+        }
+        result->value = std::move(value_expr);
     }
     else
     {
-        return std::move(get_failure(compiled_value));
+        return std::move(get_failure(compiled_expr));
     }
 
-    if (!expression_type_matches(result->value, return_type->value))
-    {
-        return compiler_failure{
-            "Function expression type does not match declared return type",
-             ast::get_context(function.body)
-        };
-    }
-
-    return std::move(result);
+    return compiled_function_result{
+        function_meta{
+            function.return_type.name,
+            std::move(signature)
+        },
+        std::move(result)
+    };
 }
 
-compiler_result<std::unique_ptr<runtime::function>>
+std::unique_ptr<runtime::function>
+make_constructor(runtime::structure const& prototype)
+{
+    auto constructor = std::make_unique<runtime::function>();
+    constructor->parameters = prototype.fields;
+    // bootstrap the type system!
+    constructor->value = std::make_unique<runtime::construction>(constructor.get());
+    return std::move(constructor);
+}
+
+function_meta
+make_constructor_meta(ast::structure const& structure)
+{
+    function_meta meta;
+    meta.return_type = structure.name;
+    meta.parameter_types.reserve(structure.fields.size());
+    std::transform(structure.fields.begin(), structure.fields.end(),
+                   std::back_inserter(meta.parameter_types),
+                   [](auto const& field) { return field.type; });
+    return meta;
+}
+
+exceptional<std::unique_ptr<runtime::structure>, compiler_failure>
 compile(compiler_environment const& env, ast::structure  const& structure)
 {
-    auto it = env.functions.find(structure.name);
+    auto it = env.prototypes.find(structure.name);
 
-    if (it != env.functions.end())
+    if (it != env.prototypes.end())
     {
         std::stringstream message;
         message << "Redefinition of structure " << structure.name;
         return compiler_failure{message.str(), structure.context};
     }
 
-    auto constructor = std::make_unique<runtime::function>();
-    constructor->parameters.reserve(structure.fields.size());
+    auto prototype = std::make_unique<runtime::structure>();
+    prototype->fields.reserve(structure.fields.size());
 
     for (const ast::parameter& field : structure.fields)
     {
-        compiler_result<runtime::value_variant> compiled = compile(env, field);
+        compiler_expect<runtime::value_variant> compiled = compile(env, field);
         if (is_success(compiled))
         {
-            constructor->parameters.push_back(std::move(get_success(compiled)));
+            prototype->fields.push_back(std::move(get_success(compiled).value));
         }
         else
         {
@@ -479,10 +519,7 @@ compile(compiler_environment const& env, ast::structure  const& structure)
         }
     }
 
-    // bootstrap the type system!
-    constructor->value = std::make_unique<runtime::construction>(constructor.get());
-
-    return std::move(constructor);
+    return std::move(prototype);
 }
 
 struct statement_compiler
@@ -492,11 +529,11 @@ struct statement_compiler
 
     compiler_status operator()(ast::function const& function)
     {
-        compiler_result<std::unique_ptr<runtime::function>> result = compile(env, function);
+        auto result = compile(env, function);
         if (is_success(result))
         {
-            std::unique_ptr<runtime::function> blueprint = std::move(get_success(result));
-            env.functions[function.name] = blueprint.get();
+            auto [meta, blueprint] = std::move(get_success(result));
+            env.functions[function.name].push_back({std::move(meta), blueprint.get()});
             program.functions.push_back(std::move(blueprint));
             return compiler_success{function.name};
         }
@@ -508,11 +545,14 @@ struct statement_compiler
 
     compiler_status operator()(ast::structure const& structure)
     {
-        compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
+        auto result = compile(env, structure);
         if (is_success(result))
         {
-            std::unique_ptr<runtime::function> constructor = std::move(get_success(result));
-            env.functions[structure.name] = constructor.get();
+            std::unique_ptr<runtime::structure> prototype = std::move(get_success(result));
+            std::unique_ptr<runtime::function> constructor = make_constructor(*prototype);
+            function_meta meta = make_constructor_meta(structure);
+            env.prototypes[structure.name] = std::make_unique<runtime::value_variant>(*prototype);
+            env.functions[structure.name].push_back({std::move(meta), constructor.get()});
             program.functions.push_back(std::move(constructor));
             return compiler_success{structure.name};
         }
@@ -524,10 +564,10 @@ struct statement_compiler
 
     compiler_status operator()(ast::evaluation const& eval)
     {
-        compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, {}, eval);
+        compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, {}, eval);
         if (is_success(result))
         {
-            program.evaluations.push_back(std::move(get_success(result)));
+            program.evaluations.push_back(std::move(get_success(result).value));
             return compiler_success{};
         }
         else
@@ -565,36 +605,92 @@ compile(runtime::program& prog,
 }
 
 template <typename T>
-std::unique_ptr<runtime::function>
-make_fundamental_type()
+void add_fundamental_type(compiler_environment& env)
 {
-    auto type = std::make_unique<runtime::function>();
-    type->value = T{};
-    return std::move(type);
-};
-
-template <typename T>
-void add_fundamental_type(compiler_environment& env, runtime::program& prog)
-{
-    prog.functions.push_back(make_fundamental_type<T>());
-    env.functions[ast::name_of<ast::literal<T>>::value] = prog.functions.back().get();
+    env.prototypes[ast::name_of_v<ast::literal<T>>] = std::make_unique<runtime::value_variant>(T{});
 }
 
+template <template <typename> class Operator, typename Type>
+void add_fundamental_operation(
+        compiler_environment& env,
+        runtime::program& prog,
+        std::string const& name)
+{
+    auto op = std::make_unique<runtime::function>();
+    op->parameters = {Type{}, Type{}};
+    op->value = std::make_unique<runtime::fundamental_operation<Operator, Type>>(op.get());
+
+    prog.functions.push_back(std::move(op));
+
+    function_meta meta;
+    meta.return_type = ast::name_of_v<ast::literal<Type>>;
+    meta.parameter_types = {meta.return_type, meta.return_type};
+
+    env.functions[name].push_back({std::move(meta), prog.functions.back().get()});
+}
 std::pair<compiler_environment, runtime::program>
 setup_compiler()
 {
     compiler_environment env;
     runtime::program prog;
-    add_fundamental_type<int8_t>(env, prog);
-    add_fundamental_type<int16_t>(env, prog);
-    add_fundamental_type<int32_t>(env, prog);
-    add_fundamental_type<int64_t>(env, prog);
-    add_fundamental_type<uint8_t>(env, prog);
-    add_fundamental_type<uint16_t>(env, prog);
-    add_fundamental_type<uint32_t>(env, prog);
-    add_fundamental_type<uint64_t>(env, prog);
-    add_fundamental_type<flt32_t>(env, prog);
-    add_fundamental_type<flt64_t>(env, prog);
+
+    add_fundamental_type<bool>(env);
+    add_fundamental_type<int8_t>(env);
+    add_fundamental_type<int16_t>(env);
+    add_fundamental_type<int32_t>(env);
+    add_fundamental_type<int64_t>(env);
+    add_fundamental_type<uint8_t>(env);
+    add_fundamental_type<uint16_t>(env);
+    add_fundamental_type<uint32_t>(env);
+    add_fundamental_type<uint64_t>(env);
+    add_fundamental_type<flt32_t>(env);
+    add_fundamental_type<flt64_t>(env);
+
+    add_fundamental_operation<runtime::plus, int8_t  >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, int16_t >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, int32_t >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, int64_t >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, uint8_t >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, uint16_t>(env, prog, "+");
+    add_fundamental_operation<runtime::plus, uint32_t>(env, prog, "+");
+    add_fundamental_operation<runtime::plus, uint64_t>(env, prog, "+");
+    add_fundamental_operation<runtime::plus, flt32_t >(env, prog, "+");
+    add_fundamental_operation<runtime::plus, flt64_t >(env, prog, "+");
+
+
+    add_fundamental_operation<runtime::minus, int8_t  >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, int16_t >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, int32_t >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, int64_t >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, uint8_t >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, uint16_t>(env, prog, "-");
+    add_fundamental_operation<runtime::minus, uint32_t>(env, prog, "-");
+    add_fundamental_operation<runtime::minus, uint64_t>(env, prog, "-");
+    add_fundamental_operation<runtime::minus, flt32_t >(env, prog, "-");
+    add_fundamental_operation<runtime::minus, flt64_t >(env, prog, "-");
+
+    add_fundamental_operation<runtime::multiplies, int8_t  >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, int16_t >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, int32_t >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, int64_t >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, uint8_t >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, uint16_t>(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, uint32_t>(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, uint64_t>(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, flt32_t >(env, prog, "*");
+    add_fundamental_operation<runtime::multiplies, flt64_t >(env, prog, "*");
+
+    add_fundamental_operation<runtime::divides, int8_t  >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, int16_t >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, int32_t >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, int64_t >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, uint8_t >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, uint16_t>(env, prog, "/");
+    add_fundamental_operation<runtime::divides, uint32_t>(env, prog, "/");
+    add_fundamental_operation<runtime::divides, uint64_t>(env, prog, "/");
+    add_fundamental_operation<runtime::divides, flt32_t >(env, prog, "/");
+    add_fundamental_operation<runtime::divides, flt64_t >(env, prog, "/");
+
     return {std::move(env), std::move(prog)};
 };
 

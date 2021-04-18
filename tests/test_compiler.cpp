@@ -8,42 +8,49 @@ struct fixture
 {
     compiler_environment env;
     compiler_scope scope;
+    runtime::program prog;
+
+    fixture()
+    {
+        std::tie(env, prog) = setup_compiler();
+    }
 };
 
 TEST_CASE_FIXTURE(fixture, "compile literal")
 {
     const ast::literal_variant literal = ast::literal<int32_t>{1337};
-    runtime::value_variant result = compile(literal);
-    REQUIRE(std::holds_alternative<int32_t>(result));
+    const auto result = compile(env, literal);
+    REQUIRE(is_success(result));
+    auto const& [value, type] = get_success(result);
+    REQUIRE(std::holds_alternative<int32_t>(value));
+    REQUIRE(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
 TEST_CASE_FIXTURE(fixture, "compile parameter with undefined type returns failure")
 {
     const ast::parameter param = {"undefined-type", "parameter-name"};
-    compiler_result<runtime::value_variant> result = compile(env, param);
+    const compiler_expect<runtime::value_variant> result = compile(env, param);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile parameter with defined type returns success")
 {
-    runtime::function type;
-    env.functions["defined-type"] = &type;
-    const ast::parameter param = {"defined-type", "parameter-name"};
-    compiler_result<runtime::value_variant> result = compile(env, param);
+    const ast::parameter param = {"i32", "parameter-name"};
+    const compiler_expect<runtime::value_variant> result = compile(env, param);
     REQUIRE(is_success(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile undefined reference returns failure")
 {
     const ast::reference ref{"undefined-reference"};
-    compiler_result<runtime::value_variant*> result = compile(scope, ref);
+    compiler_expect<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile undefined reference returns failure")
 {
     const ast::reference ref{"undefined-reference"};
-    compiler_result<runtime::value_variant*> result = compile(scope, ref);
+    compiler_expect<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_failure(result));
 }
 
@@ -51,26 +58,27 @@ TEST_CASE_FIXTURE(fixture, "compile reference in scope returns pointer to value"
 {
     const ast::reference ref{"defined-reference"};
     runtime::value_variant param;
-    scope.parameters[ref.name] = &param;
-    compiler_result<runtime::value_variant*> result = compile(scope, ref);
+    scope.parameters[ref.name] = {&param, "defined-type"};
+    const compiler_expect<runtime::value_variant*> result = compile(scope, ref);
     REQUIRE(is_success(result));
-    runtime::value_variant* ptr = std::get<runtime::value_variant*>(result);
-    CHECK(ptr == &param);
+    const auto& [value, type] = get_success(result);
+    CHECK(value == &param);
+    CHECK(type == "defined-type");
 }
 
 TEST_CASE("get_evaluation_prototype returns the expected value variant for literal")
 {
-    runtime::expression expr = int32_t{0};
-    runtime::value_variant proto = get_evaluation_prototype(expr);
+    const runtime::expression expr = int32_t{0};
+    const runtime::value_variant proto = get_evaluation_prototype(expr);
     CHECK(std::holds_alternative<int32_t>(proto));
 }
 
 TEST_CASE("get_evaluation_prototype returns the expected value variant for structure")
 {
-    runtime::expression expr = runtime::structure{{int32_t{0}}};
-    runtime::value_variant proto = get_evaluation_prototype(expr);
+    const runtime::expression expr = runtime::structure{{int32_t{0}}};
+    const runtime::value_variant proto = get_evaluation_prototype(expr);
     REQUIRE(std::holds_alternative<runtime::structure>(proto));
-    auto instance = std::get<runtime::structure>(proto);
+    const auto instance = std::get<runtime::structure>(proto);
     REQUIRE(instance.fields.size() == 1);
     CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
 }
@@ -79,8 +87,8 @@ TEST_CASE("get_evaluation_prototype returns the expected value variant for evalu
 {
     runtime::function func;
     func.value = int32_t{};
-    runtime::expression expr = std::make_unique<runtime::evaluation>(&func);
-    runtime::value_variant proto = get_evaluation_prototype(expr);
+    const runtime::expression expr = std::make_unique<runtime::evaluation>(&func);
+    const runtime::value_variant proto = get_evaluation_prototype(expr);
     REQUIRE(std::holds_alternative<int32_t>(proto));
 }
 
@@ -89,9 +97,9 @@ TEST_CASE("get_evaluation_prototype returns the expected value variant for const
     runtime::function func;
     func.parameters = {int32_t{}};
     func.value = std::make_unique<runtime::construction>(&func);
-    runtime::value_variant proto = get_evaluation_prototype(func.value);
+    const runtime::value_variant proto = get_evaluation_prototype(func.value);
     REQUIRE(std::holds_alternative<runtime::structure>(proto));
-    auto instance = std::get<runtime::structure>(proto);
+    const auto instance = std::get<runtime::structure>(proto);
     REQUIRE(instance.fields.size() == 1);
     CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
 }
@@ -99,50 +107,48 @@ TEST_CASE("get_evaluation_prototype returns the expected value variant for const
 TEST_CASE_FIXTURE(fixture, "compile structure with no fields")
 {
     const ast::structure structure = {"my-structure", {}};
-    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
+    const auto result = compile(env, structure);
     REQUIRE(is_success(result));
-    auto constructor = std::move(get_success(result));
-    REQUIRE(constructor->parameters.empty());
+    const auto& prototype = get_success(result);
+    REQUIRE(prototype->fields.empty());
 }
 
-TEST_CASE_FIXTURE(fixture, "compile structure with one field of undefind type returns failure")
+TEST_CASE_FIXTURE(fixture, "compile structure with one field of undefined type returns failure")
 {
     const ast::structure structure = {"my-structure", {{"undefined-type", "field-name"}}};
-    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
+    const auto result = compile(env, structure);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
 {
-    runtime::function type;
-    type.value = int32_t{};
-    env.functions["i32"] = &type;
+    env.prototypes["i32"] = std::make_unique<runtime::value_variant>(int32_t{});
     const ast::structure structure = {"my-structure", {{"i32", "field-name"}}};
-    compiler_result<std::unique_ptr<runtime::function>> result = compile(env, structure);
+    const auto result = compile(env, structure);
     REQUIRE(is_success(result));
-    auto constructor= std::move(get_success(result));
-    REQUIRE(constructor->parameters.size() == 1);
-    runtime::value_variant field_type = get_evaluation_prototype(constructor->parameters.at(0));
+    const auto& prototype = get_success(result);
+    REQUIRE(prototype->fields.size() == 1);
+    const runtime::value_variant field_type = get_evaluation_prototype(prototype->fields.at(0));
     REQUIRE(std::holds_alternative<int32_t>(field_type));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile evaluation of undefined function returns failure")
 {
     const ast::evaluation eval = {"undefined-function", {}};
-    compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile evaluation of nullary function")
 {
     runtime::function func;
-    env.functions["defined-function"] = &func;
+    env.functions["defined-function"].push_back({function_meta{}, &func});
     const ast::evaluation eval = {"defined-function", {}};
-    compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
     REQUIRE(is_success(result));
-    auto& compiled = std::get<std::unique_ptr<runtime::evaluation>>(result);
-    CHECK(compiled->blueprint == &func);
-    CHECK(compiled->arguments.empty());
+    const auto& [value, type] = get_success(result);
+    CHECK(value->blueprint == &func);
+    CHECK(value->arguments.empty());
 }
 
 TEST_CASE("expression_type_matches returns false for different fundamental type")
@@ -194,9 +200,13 @@ TEST_CASE_FIXTURE(fixture,
     runtime::function func;
     func.parameters.resize(1);
     func.parameters.at(0) = int32_t{0};
-    env.functions["defined-function"] = &func;
+    function_meta meta;
+    meta.parameter_types = {ast::name_of_v<ast::literal<int32_t>>};
+    env.functions["defined-function"].push_back({meta, &func});
+
     const ast::evaluation eval = {"defined-function", {ast::literal<int64_t>{1337}}};
-    compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    const compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+
     REQUIRE(is_failure(result));
 }
 
@@ -205,25 +215,33 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of unary function with matching p
     runtime::function func;
     func.parameters.resize(1);
     func.parameters.at(0) = int32_t{0};
-    env.functions["defined-function"] = &func;
+
+    const function_meta meta = {
+        ast::name_of_v<ast::literal<int32_t>>,
+        {ast::name_of_v<ast::literal<int32_t>>}
+    };
+    env.functions["defined-function"].push_back({meta, &func});
+
     const ast::evaluation eval = {"defined-function", {ast::literal<int32_t>{1337}}};
-    compiler_result<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    const compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
     REQUIRE(is_success(result));
-    auto& compiled = std::get<std::unique_ptr<runtime::evaluation>>(result);
-    CHECK(compiled->blueprint == &func);
-    CHECK(compiled->arguments.size() == 1);
+    const auto& [value, type] = get_success(result);
+    CHECK(value->blueprint == &func);
+    CHECK(value->arguments.size() == 1);
+    CHECK(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
 TEST_CASE_FIXTURE(fixture, "compile literal value expression")
 {
     const ast::expression expr = ast::literal<int32_t>{1337};
-    compiler_result<runtime::expression> result = compile(env, scope, expr);
+    const compiler_expect<runtime::expression> result = compile(env, scope, expr);
     REQUIRE(is_success(result));
-    runtime::expression compiled = std::move(get_success(result));
+    const auto& [compiled, type] = get_success(result);
     REQUIRE(std::holds_alternative<runtime::value_variant>(compiled));
-    auto value = std::get<runtime::value_variant>(compiled);
+    const auto value = std::get<runtime::value_variant>(compiled);
     REQUIRE(std::holds_alternative<int32_t>(value));
     CHECK(std::get<int32_t>(value) == 1337);
+    CHECK(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
 TEST_CASE_FIXTURE(fixture, "compile parameter reference expression")
@@ -232,14 +250,15 @@ TEST_CASE_FIXTURE(fixture, "compile parameter reference expression")
     const ast::expression expr = ref;
 
     runtime::value_variant param;
-    scope.parameters[ref.name] = &param;
+    scope.parameters[ref.name] = {&param, "defined-type"};
 
-    compiler_result<runtime::expression> result = compile(env, scope, expr);
+    const compiler_expect<runtime::expression> result = compile(env, scope, expr);
     REQUIRE(is_success(result));
-    runtime::expression compiled = std::move(get_success(result));
+    const auto& [compiled, type ] = get_success(result);
     REQUIRE(std::holds_alternative<runtime::value_variant*>(compiled));
-    auto* ptr = std::get<runtime::value_variant*>(compiled);
+    const auto* ptr = std::get<runtime::value_variant*>(compiled);
     CHECK(ptr == &param);
+    CHECK(type == "defined-type");
 }
 
 TEST_CASE_FIXTURE(fixture, "compile evaluation expression")
@@ -248,14 +267,16 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation expression")
     const ast::expression expr = eval;
 
     runtime::function func;
-    env.functions[eval.function] = &func;
+    env.functions["func"].push_back({function_meta{"return-type"}, &func});
 
-    compiler_result<runtime::expression> result = compile(env, scope, expr);
+    const auto result = compile(env, scope, expr);
     REQUIRE(is_success(result));
-    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(get_success(result)));
-    auto compiled = std::move(std::get<std::unique_ptr<runtime::evaluation>>(get_success(result)));
+    const auto& [expr_value, expr_type] = get_success(result);
+    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(expr_value));
+    const auto& compiled = std::get<std::unique_ptr<runtime::evaluation>>(expr_value);
     CHECK(compiled->blueprint == &func);
     CHECK(compiled->arguments.empty());
+    CHECK(expr_type == "return-type");
 }
 
 TEST_CASE_FIXTURE(fixture, "compile function with undefined return type returns failure")
@@ -267,15 +288,12 @@ TEST_CASE_FIXTURE(fixture, "compile function with undefined return type returns 
         {},
         ast::literal_variant{ast::literal<int32_t>{1337}}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_failure(result));
 }
 
-TEST_CASE_FIXTURE(fixture, "compile function with return/value type mis-match returns failure")
+TEST_CASE_FIXTURE(fixture, "compile function with return/value type mismatch returns failure")
 {
-    runtime::function i32;
-    i32.value = int32_t{0};
-    env.functions["i32"] = &i32;
     const ast::function func
     {
         "my-function",
@@ -283,15 +301,12 @@ TEST_CASE_FIXTURE(fixture, "compile function with return/value type mis-match re
         {},
         ast::literal_variant{ast::literal<int64_t>{1337}}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile nullary value expression function")
 {
-    runtime::function i32;
-    i32.value = int32_t{0};
-    env.functions["i32"] = &i32;
     const ast::function func
     {
         "my-function",
@@ -299,24 +314,23 @@ TEST_CASE_FIXTURE(fixture, "compile nullary value expression function")
         {},
         ast::literal_variant{ast::literal<int32_t>{1337}}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_success(result));
-    std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
+    const auto& [meta, compiled] = get_success(result);
     CHECK(compiled->parameters.empty());
     CHECK(compiled->parameters.empty());
     REQUIRE(std::holds_alternative<runtime::value_variant>(compiled->value));
-    auto variant = std::get<runtime::value_variant>(compiled->value);
+    const auto variant = std::get<runtime::value_variant>(compiled->value);
     REQUIRE(std::holds_alternative<int32_t>(variant));
-    auto value = std::get<int32_t>(variant);
+    const auto value = std::get<int32_t>(variant);
     CHECK(value == 1337);
+    CHECK(meta.return_type == "i32");
+    CHECK(meta.parameter_types.empty());
 }
 
 TEST_CASE_FIXTURE(fixture,
     "compile function with expression referencing undefined parameter returns failure")
 {
-    runtime::function i32;
-    i32.value = int32_t{0};
-    env.functions["i32"] = &i32;
     const ast::function func
     {
         "my-function",
@@ -326,15 +340,12 @@ TEST_CASE_FIXTURE(fixture,
         },
         ast::reference{"undefined"}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile unary function with valid parameter reference expression")
 {
-    runtime::function i32;
-    i32.value = int32_t{0};
-    env.functions["i32"] = &i32;
     const ast::function func
     {
         "my-function",
@@ -344,13 +355,16 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid parameter referenc
         },
         ast::reference{"param"}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_success(result));
-    std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
+    const auto& [meta, compiled] = get_success(result);
     REQUIRE(std::holds_alternative<runtime::value_variant*>(compiled->value));
-    auto* ptr = std::get<runtime::value_variant*>(compiled->value);
+    const auto* ptr = std::get<runtime::value_variant*>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
     CHECK(ptr == &compiled->parameters.at(0));
+    CHECK(meta.return_type == "i32");
+    REQUIRE(meta.parameter_types.size() == 1);
+    CHECK(meta.parameter_types.at(0) == "i32");
 }
 
 TEST_CASE_FIXTURE(fixture,
@@ -360,8 +374,8 @@ TEST_CASE_FIXTURE(fixture,
     runtime::function i64;
     i32.value = int32_t{0};
     i64.value = int64_t{0};
-    env.functions["i32"] = &i32;
-    env.functions["i64"] = &i64;
+    env.functions["i32"].push_back({function_meta{}, &i32});
+    env.functions["i64"].push_back({function_meta{}, &i64});
     const ast::function func
     {
         "my-function",
@@ -371,7 +385,7 @@ TEST_CASE_FIXTURE(fixture,
         },
         ast::evaluation{"i32", {ast::reference{"param"}}}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_failure(result));
 }
 
@@ -380,7 +394,7 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     runtime::function i32;
     i32.value = int32_t{};
     i32.parameters = {int32_t{}};
-    env.functions["i32"] = &i32;
+    env.functions["i32"].push_back({function_meta{"i32", {"i32"}}, &i32});
     const ast::function func =
     {
         "my-function",
@@ -390,52 +404,55 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
         },
         ast::evaluation{"i32", {ast::reference{"param"}}}
     };
-    auto result = compile(env, func);
+    const auto result = compile(env, func);
     REQUIRE(is_success(result));
-    std::unique_ptr<runtime::function> compiled = std::move(get_success(result));
+    const auto& [meta, compiled] = get_success(result);
     REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(compiled->value));
-    auto& eval = std::get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    const auto& eval = std::get<std::unique_ptr<runtime::evaluation>>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
     REQUIRE(eval->blueprint == &i32);
     REQUIRE(eval->arguments.size() == 1);
     REQUIRE(std::holds_alternative<runtime::value_variant*>(eval->arguments.at(0)));
-    auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
+    const auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
+    CHECK(meta.return_type == "i32");
+    REQUIRE(meta.parameter_types.size() == 1);
+    CHECK(meta.parameter_types.at(0) == "i32");
 }
 
 TEST_CASE_FIXTURE(fixture, "compile condition with no branches returns failure")
 {
-    ast::expression fallback = ast::literal<int32_t>{};
-    ast::condition cond = {{}, fallback};
-    auto result = compile(env, scope, cond);
+    const ast::expression fallback = ast::literal<int32_t>{};
+    const ast::condition cond = {{}, fallback};
+    const auto result = compile(env, scope, cond);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile condition without fallback returns failure")
 {
-    ast::branch branch = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
-    ast::condition cond = {{branch}};
-    auto result = compile(env, scope, cond);
+    const ast::branch branch = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    const ast::condition cond = {{branch}};
+    const auto result = compile(env, scope, cond);
     REQUIRE(is_failure(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile with at least one branch and one fallback works")
 {
-    ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
-    ast::expression fallback = ast::literal<int32_t>{};
-    ast::condition cond = {{branch}, fallback};
-    auto result = compile(env, scope, cond);
+    const ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+    const ast::expression fallback = ast::literal<int32_t>{};
+    const ast::condition cond = {{branch}, fallback};
+    const auto result = compile(env, scope, cond);
     REQUIRE(is_success(result));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile condition with multiple branches works")
 {
-    ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
-    ast::branch second = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
-    std::vector<ast::branch> branches = {first, second};
-    ast::expression fallback = ast::literal<int32_t>{};
-    ast::condition cond = {branches, fallback};
-    auto result = compile(env, scope, cond);
+    const ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+    const ast::branch second = {ast::literal<bool>{true},  ast::literal<int32_t>{}};
+    const std::vector<ast::branch> branches = {first, second};
+    const ast::expression fallback = ast::literal<int32_t>{};
+    const ast::condition cond = {branches, fallback};
+    const auto result = compile(env, scope, cond);
     REQUIRE(is_success(result));
 }
 
@@ -443,43 +460,27 @@ TEST_CASE_FIXTURE(fixture, "compile condition with conflicting returns values fa
 {
     SUBCASE("when branch and fallback types differ")
     {
-        ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
-        ast::expression fallback = ast::literal<int64_t>{};
-        ast::condition cond = {{branch}, fallback};
-        auto result = compile(env, scope, cond);
+        const ast::branch branch = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+        const ast::expression fallback = ast::literal<int64_t>{};
+        const ast::condition cond = {{branch}, fallback};
+        const auto result = compile(env, scope, cond);
         REQUIRE(is_failure(result));
     }
 
     SUBCASE("when branch types differ")
     {
-        ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
-        ast::branch second = {ast::literal<bool>{true},  ast::literal<int64_t>{}};
-        std::vector<ast::branch> branches = {first, second};
-        ast::expression fallback = ast::literal<int32_t>{};
-        ast::condition cond = {branches, fallback};
-        auto result = compile(env, scope, cond);
+        const ast::branch first = {ast::literal<bool>{false}, ast::literal<int32_t>{}};
+        const ast::branch second = {ast::literal<bool>{true},  ast::literal<int64_t>{}};
+        const std::vector<ast::branch> branches = {first, second};
+        const ast::expression fallback = ast::literal<int32_t>{};
+        const ast::condition cond = {branches, fallback};
+        const auto result = compile(env, scope, cond);
         REQUIRE(is_failure(result));
     }
 }
 
-struct prog_fixture : fixture
-{
-    std::unique_ptr<runtime::function> i32;
-    runtime::program prog;
-
-    prog_fixture()
-    {
-        i32 = std::make_unique<runtime::function>();
-        i32->value = int32_t{};
-        i32->parameters = {int32_t{}};
-        env.functions["i32"] = i32.get();
-        prog.functions.push_back(std::move(i32));
-    }
-};
-
-TEST_CASE_FIXTURE(prog_fixture,
-    "compile statement with function populates the runtime program "
-    "and compiler environment functions")
+TEST_CASE_FIXTURE(fixture,
+    "compile statement with function effects the runtime program and the compiler environment")
 {
     const ast::function func = {
         "my-function",
@@ -487,39 +488,140 @@ TEST_CASE_FIXTURE(prog_fixture,
         {
             {"i32", "param"}
         },
-        ast::evaluation{"i32", {ast::reference{"param"}}}
+        ast::reference{"param"}
     };
-    ast::statement statement = func;
-    REQUIRE(env.functions.size() == 1);
-    REQUIRE(prog.functions.size() == 1);
-    compiler_status status = compile(prog, env, statement);
+    const ast::statement statement = func;
+    const size_t func_count = prog.functions.size();
+    const compiler_status status = compile(prog, env, statement);
     REQUIRE(is_success(status));
-    REQUIRE(env.functions.size() == 2);
-    REQUIRE(prog.functions.size() == 2);
-    auto it = env.functions.find(func.name);
-    REQUIRE(it != env.functions.end());
+    CHECK(prog.functions.size() == (func_count + 1));
+    CHECK(is_success(find_function(env, "my-function", {"i32"})));
 }
 
-TEST_CASE_FIXTURE(prog_fixture,
-    "compile statement with structure populates the runtime program and the compiler environment")
+TEST_CASE_FIXTURE(fixture,
+    "compile statement with structure effects the runtime program and the compiler environment")
 {
     const ast::structure structure = {"my-structure", {{"i32", "field"}}};
-    ast::statement statement = structure;
-    CHECK(env.functions.size() == 1);
-    CHECK(prog.functions.size() == 1);
+    const ast::statement statement = structure;
+    const size_t func_count = prog.functions.size();
     CHECK(env.functions.find(structure.name) == env.functions.end());
-    compiler_status status = compile(prog, env, statement);
+    CHECK(env.prototypes.find(structure.name) == env.prototypes.end());
+    const compiler_status status = compile(prog, env, statement);
     REQUIRE(is_success(status));
-    CHECK(env.functions.size() == 2);
-    CHECK(prog.functions.size() == 2);
+    CHECK(prog.functions.size() == (func_count + 1));
     CHECK(env.functions.find(structure.name) != env.functions.end());
+    CHECK(env.prototypes.find(structure.name) != env.prototypes.end());
 }
 
-TEST_CASE_FIXTURE(prog_fixture,
-    "compile statement with evaluation populates the program evaluations")
+TEST_CASE_FIXTURE(fixture, "function redefinition fails")
 {
-    const ast::evaluation eval = {"i32", {ast::literal<int32_t>{1337}}};
-    ast::statement statement = eval;
+    const ast::function func = {
+        "my-function",
+        ast::reference{"i32"},
+        {
+            {"i32", "param"}
+        },
+        ast::reference{"param"}
+    };
+    const ast::statement statement = func;
+    const size_t func_count = prog.functions.size();
+    REQUIRE(is_success(compile(prog, env, statement)));
+    REQUIRE(is_failure(compile(prog, env, statement)));
+    CHECK(prog.functions.size() == (func_count + 1));
+}
+
+TEST_CASE_FIXTURE(fixture, "redefinition of structure fails")
+{
+    const ast::structure structure = {"my-structure", {{"i32", "field"}}};
+    const ast::statement statement = structure;
+    const size_t func_count = prog.functions.size();
+    REQUIRE(is_success(compile(prog, env, statement)));
+    REQUIRE(is_failure(compile(prog, env, statement)));
+    CHECK(prog.functions.size() == (func_count + 1));
+}
+
+TEST_CASE_FIXTURE(fixture, "compiling function definitions with different signature")
+{
+    const ast::function func_i32 = {
+        "my-function",
+        ast::reference{"i32"},
+        {
+            {"i32", "param"}
+        },
+        ast::reference{"param"}
+    };
+
+    const ast::function func_i64 = {
+        "my-function",
+        ast::reference{"i64"},
+        {
+            {"i64", "param"}
+        },
+        ast::reference{"param"}
+    };
+
+    const ast::statement define_func_i32 = func_i32;
+    const ast::statement define_func_i64 = func_i64;
+    REQUIRE(is_success(compile(prog, env, define_func_i32)));
+    REQUIRE(is_success(compile(prog, env, define_func_i64)));
+}
+
+TEST_CASE_FIXTURE(fixture, "fundamental operations are defined as expected")
+{
+    SUBCASE("for + i32 i32")
+    {
+        const auto func_query = find_function(env, "+", {"i32", "i32"});
+        REQUIRE(is_success(func_query));
+        const auto& [return_type, plus] = get_success(func_query);
+        REQUIRE(plus->parameters.size() == 2);
+        CHECK(std::holds_alternative<int32_t>(plus->parameters.at(0)));
+        CHECK(std::holds_alternative<int32_t>(plus->parameters.at(1)));
+        CHECK(std::holds_alternative<int32_t>(get_evaluation_prototype(plus->value)));
+        CHECK(return_type == "i32");
+    }
+
+    SUBCASE("for + i64 i64")
+    {
+        const auto func_query = find_function(env, "+", {"i64", "i64"});
+        REQUIRE(is_success(func_query));
+        const auto& [return_type, plus] = get_success(func_query);
+        REQUIRE(plus->parameters.size() == 2);
+        CHECK(std::holds_alternative<int64_t>(plus->parameters.at(0)));
+        CHECK(std::holds_alternative<int64_t>(plus->parameters.at(1)));
+        CHECK(std::holds_alternative<int64_t>(get_evaluation_prototype(plus->value)));
+        CHECK(return_type == "i64");
+    }
+
+    SUBCASE("for * u16 u16")
+    {
+        const auto func_query = find_function(env, "*", {"u16", "u16"});
+        REQUIRE(is_success(func_query));
+        const auto& [return_type, plus] = get_success(func_query);
+        REQUIRE(plus->parameters.size() == 2);
+        CHECK(std::holds_alternative<uint16_t>(plus->parameters.at(0)));
+        CHECK(std::holds_alternative<uint16_t>(plus->parameters.at(1)));
+        CHECK(std::holds_alternative<uint16_t>(get_evaluation_prototype(plus->value)));
+        CHECK(return_type == "u16");
+    }
+
+    SUBCASE("for / f32 f32")
+    {
+        const auto func_query = find_function(env, "/", {"f32", "f32"});
+        REQUIRE(is_success(func_query));
+        const auto& [return_type, plus] = get_success(func_query);
+        REQUIRE(plus->parameters.size() == 2);
+        CHECK(std::holds_alternative<flt32_t>(plus->parameters.at(0)));
+        CHECK(std::holds_alternative<flt32_t>(plus->parameters.at(1)));
+        plus->parameters.at(1) = flt32_t{1};
+        CHECK(std::holds_alternative<flt32_t>(get_evaluation_prototype(plus->value)));
+        CHECK(return_type == "f32");
+    }
+}
+
+TEST_CASE_FIXTURE(fixture, "compile statement with evaluation populates the program evaluations")
+{
+    const ast::evaluation eval = {"+", {ast::literal<int32_t>{13}, ast::literal<int32_t>{37}}};
+    const ast::statement statement = eval;
     REQUIRE(prog.evaluations.empty());
     const compiler_status status = compile(prog, env, statement);
     REQUIRE(is_success(status));
