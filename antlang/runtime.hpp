@@ -75,9 +75,25 @@ struct operation
 template <template <typename> class Operator, typename Type>
 struct fundamental_operation final : operation
 {
-    fundamental_operation(function* blueprint);
+    fundamental_operation(function* blueprint)
+        : operation(blueprint)
+    {
+        for (size_t i = 0; i < 2; ++i)
+        {
+            if (!std::holds_alternative<Type>(blueprint->parameters.at(i)))
+            {
+                throw std::invalid_argument("operation blueprint invalid parameter type");
+            }
+        }
+    }
 
-    value_variant execute() override;
+    value_variant execute()
+    {
+        Operator<Type> op;
+        Type const& arg0 = std::get<Type>(blueprint->parameters.at(0));
+        Type const& arg1 = std::get<Type>(blueprint->parameters.at(1));
+        return op(arg0, arg1);
+    }
 };
 
 struct arithmetic_error : public std::runtime_error
@@ -101,6 +117,13 @@ struct divides
         return numerator / denominator;
     }
 };
+
+using std::equal_to;
+using std::not_equal_to;
+using std::greater;
+using std::less;
+using std::greater_equal;
+using std::less_equal;
 
 struct evaluation
 {

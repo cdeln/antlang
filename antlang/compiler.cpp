@@ -527,6 +527,8 @@ void add_fundamental_operation(
         runtime::program& prog,
         std::string const& name)
 {
+    using ReturnType = decltype(Operator<Type>{}(std::declval<Type>(), std::declval<Type>()));
+
     auto op = std::make_unique<runtime::function>();
     op->parameters = {Type{}, Type{}};
     op->value = std::make_unique<runtime::fundamental_operation<Operator, Type>>(op.get());
@@ -534,11 +536,59 @@ void add_fundamental_operation(
     prog.functions.push_back(std::move(op));
 
     function_meta meta;
-    meta.return_type = ast::name_of_v<ast::literal<Type>>;
-    meta.parameter_types = {meta.return_type, meta.return_type};
+    meta.return_type = ast::name_of_v<ast::literal<ReturnType>>;
+    const std::string operand_type = ast::name_of_v<ast::literal<Type>>;
+    meta.parameter_types = {operand_type, operand_type};
 
     env.functions[name].push_back({std::move(meta), prog.functions.back().get()});
 }
+
+template <
+    template <typename> class Operator,
+    typename First,
+    typename... Rest
+>
+struct operation_builder
+{
+    compiler_environment& env;
+    runtime::program& prog;
+
+    void build(std::string const& name)
+    {
+        add_fundamental_operation<Operator, First>(env, prog, name);
+        operation_builder<Operator, Rest...>{env, prog}.build(name);
+    }
+};
+
+template <template <typename> class Operator, typename Last>
+struct operation_builder<Operator, Last>
+{
+    compiler_environment& env;
+    runtime::program& prog;
+
+    void build(std::string const& name)
+    {
+        add_fundamental_operation<Operator, Last>(env, prog, name);
+    }
+};
+
+
+template <
+    template <typename> class Operator,
+    template <typename...> class TypeList,
+    typename... Types
+>
+struct operation_builder<Operator, TypeList<Types...>>
+{
+    compiler_environment& env;
+    runtime::program& prog;
+
+    void build(std::string const& name)
+    {
+        operation_builder<Operator, Types...>{env, prog}.build(name);
+    }
+};
+
 std::pair<compiler_environment, runtime::program>
 setup_compiler()
 {
@@ -557,50 +607,31 @@ setup_compiler()
     add_fundamental_type<flt32_t>(env);
     add_fundamental_type<flt64_t>(env);
 
-    add_fundamental_operation<runtime::plus, int8_t  >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, int16_t >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, int32_t >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, int64_t >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, uint8_t >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, uint16_t>(env, prog, "+");
-    add_fundamental_operation<runtime::plus, uint32_t>(env, prog, "+");
-    add_fundamental_operation<runtime::plus, uint64_t>(env, prog, "+");
-    add_fundamental_operation<runtime::plus, flt32_t >(env, prog, "+");
-    add_fundamental_operation<runtime::plus, flt64_t >(env, prog, "+");
+    using arithmetic_types =
+        std::tuple<
+            int8_t,
+            int16_t,
+            int32_t,
+            int64_t,
+            uint8_t,
+            uint16_t,
+            uint32_t,
+            uint64_t,
+            flt32_t,
+            flt64_t
+        >;
 
+    operation_builder<runtime::plus,          arithmetic_types>{env, prog}.build("+");
+    operation_builder<runtime::minus,         arithmetic_types>{env, prog}.build("-");
+    operation_builder<runtime::multiplies,    arithmetic_types>{env, prog}.build("*");
+    operation_builder<runtime::divides,       arithmetic_types>{env, prog}.build("/");
 
-    add_fundamental_operation<runtime::minus, int8_t  >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, int16_t >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, int32_t >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, int64_t >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, uint8_t >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, uint16_t>(env, prog, "-");
-    add_fundamental_operation<runtime::minus, uint32_t>(env, prog, "-");
-    add_fundamental_operation<runtime::minus, uint64_t>(env, prog, "-");
-    add_fundamental_operation<runtime::minus, flt32_t >(env, prog, "-");
-    add_fundamental_operation<runtime::minus, flt64_t >(env, prog, "-");
-
-    add_fundamental_operation<runtime::multiplies, int8_t  >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, int16_t >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, int32_t >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, int64_t >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, uint8_t >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, uint16_t>(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, uint32_t>(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, uint64_t>(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, flt32_t >(env, prog, "*");
-    add_fundamental_operation<runtime::multiplies, flt64_t >(env, prog, "*");
-
-    add_fundamental_operation<runtime::divides, int8_t  >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, int16_t >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, int32_t >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, int64_t >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, uint8_t >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, uint16_t>(env, prog, "/");
-    add_fundamental_operation<runtime::divides, uint32_t>(env, prog, "/");
-    add_fundamental_operation<runtime::divides, uint64_t>(env, prog, "/");
-    add_fundamental_operation<runtime::divides, flt32_t >(env, prog, "/");
-    add_fundamental_operation<runtime::divides, flt64_t >(env, prog, "/");
+    operation_builder<runtime::equal_to,      arithmetic_types>{env, prog}.build("=");
+    operation_builder<runtime::not_equal_to,  arithmetic_types>{env, prog}.build("!=");
+    operation_builder<runtime::greater,       arithmetic_types>{env, prog}.build(">");
+    operation_builder<runtime::less,          arithmetic_types>{env, prog}.build("<");
+    operation_builder<runtime::greater_equal, arithmetic_types>{env, prog}.build(">=");
+    operation_builder<runtime::less_equal,    arithmetic_types>{env, prog}.build("<=");
 
     return {std::move(env), std::move(prog)};
 };

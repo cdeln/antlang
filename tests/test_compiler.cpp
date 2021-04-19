@@ -485,7 +485,7 @@ TEST_CASE_FIXTURE(fixture, "compiling function definitions with different signat
     REQUIRE(is_success(compile(prog, env, define_func_i64)));
 }
 
-TEST_CASE_FIXTURE(fixture, "fundamental operations are defined as expected")
+TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
 {
     SUBCASE("for + i32 i32")
     {
@@ -546,6 +546,33 @@ TEST_CASE_FIXTURE(fixture, "fundamental operations are defined as expected")
         div->parameters.at(1) = flt32_t{1};
         CHECK(std::holds_alternative<flt32_t>(runtime::execute(*div)));
         CHECK(return_type == "f32");
+    }
+}
+
+TEST_CASE_FIXTURE(fixture, "comparison operations are defined as expected")
+{
+    SUBCASE("for = u32 u32")
+    {
+        auto func_query = find_function(env, "=", {"u32", "u32"});
+        REQUIRE(is_success(func_query));
+        auto& [return_type, equals] = get_success(func_query);
+        REQUIRE(equals->parameters.size() == 2);
+        CHECK(std::holds_alternative<uint32_t>(equals->parameters.at(0)));
+        CHECK(std::holds_alternative<uint32_t>(equals->parameters.at(1)));
+        CHECK(std::holds_alternative<bool>(runtime::execute(*equals)));
+        CHECK(return_type == "bool");
+    }
+
+    SUBCASE("for < f64 f64")
+    {
+        auto func_query = find_function(env, "<", {"f64", "f64"});
+        REQUIRE(is_success(func_query));
+        auto& [return_type, less] = get_success(func_query);
+        REQUIRE(less->parameters.size() == 2);
+        CHECK(std::holds_alternative<flt64_t>(less->parameters.at(0)));
+        CHECK(std::holds_alternative<flt64_t>(less->parameters.at(1)));
+        CHECK(std::holds_alternative<bool>(runtime::execute(*less)));
+        CHECK(return_type == "bool");
     }
 }
 
