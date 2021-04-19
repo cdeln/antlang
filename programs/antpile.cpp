@@ -15,9 +15,8 @@
 #include <vector>
 
 std::string
-read_file(std::string const& filename)
+read_file(std::ifstream& file)
 {
-    std::ifstream file(filename);
     file.seekg(std::ios::end);
     auto size = file.tellg();
     file.seekg(std::ios::beg);
@@ -90,6 +89,44 @@ struct compiler_failure_handler : failure_handler
     }
 };
 
+template <typename T>
+std::string format(T const& terminal);
+
+std::string format(ant::runtime::structure const& structure);
+
+std::string format(ant::runtime::value_variant const& value);
+
+template <typename T>
+std::string format(T const& terminal)
+{
+    std::stringstream result;
+    result << terminal;
+    return result.str();
+}
+
+std::string format(ant::runtime::structure const& structure)
+{
+    std::stringstream result;
+    result << '{';
+    for (auto const& field : structure.fields)
+    {
+        result << format(field);
+    }
+    result << '}';
+    return result.str();
+}
+
+std::string format(ant::runtime::value_variant const& value)
+{
+    return std::visit([](auto const& x) { return format(x); },
+                      static_cast<ant::runtime::value_variant_base const&>(value));
+}
+
+void print(ant::runtime::value_variant const& value)
+{
+    std::cout << format(value) << '\n';
+}
+
 int main(int argc, char** argv)
 {
     const int arg_count = argc - 1;
@@ -98,8 +135,14 @@ int main(int argc, char** argv)
         std::cerr << "\n\tInvalid number of arguments, usage: " << argv[0] << " input-files\n\n";
         return -1;
     }
-    const std::string input_file(argv[1]);
-    const std::string source_code = read_file(argv[1]);
+    const std::string input_file_path(argv[1]);
+    std::ifstream input_file(input_file_path);
+    if (!input_file)
+    {
+        std::cerr << "No such file " << ant::quote(input_file_path) << '\n';
+        return -1;
+    }
+    const std::string source_code = read_file(input_file);
     std::stringstream stream(source_code);
     std::vector<std::string> lines;
     std::vector<ant::token> tokens;
@@ -130,7 +173,7 @@ int main(int argc, char** argv)
 
     if (is_failure(parsed))
     {
-        parser_failure_handler(input_file, lines).handle(get_failure(parsed));
+        parser_failure_handler(input_file_path, lines).handle(get_failure(parsed));
         return -1;
     }
 
@@ -142,9 +185,15 @@ int main(int argc, char** argv)
     {
         if (is_failure(status))
         {
-            compiler_failure_handler(input_file, lines).handle(get_failure(status));
+            compiler_failure_handler(input_file_path, lines).handle(get_failure(status));
             return -1;
         }
+    }
+
+    for (auto& eval : prog.evaluations)
+    {
+        ant::runtime::value_variant result = execute(*eval);
+        print(result);
     }
 
     return 0;

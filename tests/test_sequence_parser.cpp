@@ -53,12 +53,12 @@ TEST_CASE("sequence parser throws exception on end of input for attributed token
 TEST_CASE("sequence parser parses a sequence of non-attributed tokens")
 {
     const auto parser =
-        make_parser
-          < sequence
-              < left_parenthesis_token
-              , right_parenthesis_token
-              >
-          >();
+        make_parser<
+            sequence<
+                left_parenthesis_token,
+                right_parenthesis_token
+            >
+        >();
     const std::vector<token> tokens = {
         {left_parenthesis_token{}},
         {right_parenthesis_token{}}
@@ -72,11 +72,11 @@ TEST_CASE("sequence parser parses a sequence of non-attributed tokens")
 TEST_CASE("sequence parser parses a sequence of attributed tokens")
 {
     const auto parser =
-        make_parser
-          < sequence
-              < identifier_token
-              , integer_literal_token
-              >
+        make_parser<
+            sequence<
+                identifier_token,
+                integer_literal_token
+            >
         >();
     const std::vector<token> tokens = {
         {identifier_token{"test"}},
@@ -94,14 +94,14 @@ TEST_CASE("sequence parser parses a sequence of attributed tokens")
 TEST_CASE("sequence parser parses a sequence of mixed non-attributed and attributed tokens")
 {
     const auto parser =
-        make_parser
-          < sequence
-              < left_parenthesis_token
-              , identifier_token
-              , integer_literal_token
-              , right_parenthesis_token
-              >
-          >();
+        make_parser<
+            sequence<
+                left_parenthesis_token,
+                identifier_token,
+                integer_literal_token,
+                right_parenthesis_token
+            >
+        >();
     const std::vector<token> tokens = {
         {left_parenthesis_token{}},
         {identifier_token{"test"}},

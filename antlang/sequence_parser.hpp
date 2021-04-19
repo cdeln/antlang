@@ -57,10 +57,10 @@ struct parser<sequence<Ts...>>
         }
     }
 
-    template
-        < size_t RuleIdx, size_t... RuleInds
-        , size_t AttrIdx, size_t... AttrInds
-        >
+    template<
+        size_t RuleIdx, size_t... RuleInds,
+        size_t AttrIdx, size_t... AttrInds
+    >
     result_type
     recursive_sub_parse(
             attribute_type& values,
