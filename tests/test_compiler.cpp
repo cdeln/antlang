@@ -585,3 +585,34 @@ TEST_CASE_FIXTURE(fixture, "compile statement with evaluation populates the prog
     REQUIRE(is_success(status));
     REQUIRE(prog.evaluations.size() == 1);
 }
+
+TEST_CASE_FIXTURE(fixture, "compile recursive function")
+{
+    const ast::function func =
+    {
+        "my-function",
+        ast::reference{"i32"},
+        {
+            {"i32", "param"}
+        },
+        ast::evaluation{"my-function", {ast::reference{"param"}}}
+    };
+    const auto result = compile(env, func);
+    if (is_failure(result))
+    {
+        MESSAGE(get_failure(result).message);
+    }
+    REQUIRE(is_success(result));
+    const auto& [meta, compiled] = get_success(result);
+    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(compiled->value));
+    const auto& eval = std::get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    REQUIRE(compiled->parameters.size() == 1);
+    REQUIRE(eval->blueprint == compiled.get());
+    REQUIRE(eval->arguments.size() == 1);
+    REQUIRE(std::holds_alternative<runtime::value_variant*>(eval->arguments.at(0)));
+    const auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
+    CHECK(argument == &compiled->parameters.at(0));
+    CHECK(meta.return_type == "i32");
+    REQUIRE(meta.parameter_types.size() == 1);
+    CHECK(meta.parameter_types.at(0) == "i32");
+}

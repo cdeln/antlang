@@ -28,6 +28,22 @@ find_function(compiler_environment const& env,
     return nullptr;
 }
 
+exceptional<function_query_result, nullptr_t>
+find_function(compiler_environment const& env,
+              compiler_scope const& scope,
+              std::string const& name,
+              std::vector<std::string> const& signature)
+{
+    if ((scope.function.name == name) && (scope.function.signature == signature))
+    {
+        return function_query_result{
+            scope.function.return_type,
+            scope.function.pointer
+        };
+    }
+    return find_function(env, name, signature);
+}
+
 struct literal_compiler
 {
     compiler_environment const& env;
@@ -107,7 +123,7 @@ compile(compiler_environment const& env,
     std::transform(arguments.begin(), arguments.end(),
                    std::back_inserter(signature),
                    [](auto const& arg) { return arg.type; });
-    auto func_query = find_function(env, eval.function, signature);
+    auto func_query = find_function(env, scope, eval.function, signature);
     if (is_failure(func_query))
     {
         std::stringstream message;
@@ -345,6 +361,7 @@ compile(compiler_environment const& env,
     }
 
     compiler_scope scope;
+    scope.function = {function.name, function.return_type.name, signature, result.get()};
     for (size_t i = 0; i < result->parameters.size(); ++i)
     {
         std::string param_name = function.parameters.at(i).name;

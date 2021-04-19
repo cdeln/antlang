@@ -69,6 +69,12 @@ struct compiler_environment
 struct compiler_scope
 {
     std::map<std::string, compiler_result<runtime::value_variant*>> parameters;
+    struct {
+        std::string name;
+        std::string return_type;
+        std::vector<std::string> signature;
+        runtime::function* pointer;
+    } function;
 };
 
 struct function_query_result
@@ -79,6 +85,12 @@ struct function_query_result
 
 exceptional<function_query_result, nullptr_t>
 find_function(compiler_environment const& env,
+              std::string const& name,
+              std::vector<std::string> const& signature);
+
+exceptional<function_query_result, nullptr_t>
+find_function(compiler_environment const& env,
+              compiler_scope const& scope,
               std::string const& name,
               std::vector<std::string> const& signature);
 
