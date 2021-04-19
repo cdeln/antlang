@@ -80,6 +80,11 @@ template class fundamental_operation<divides,     uint64_t>;
 template class fundamental_operation<divides,     flt32_t>;
 template class fundamental_operation<divides,     flt64_t>;
 
+value_variant execute(function& func)
+{
+    return execute(func.value);
+}
+
 value_variant execute(evaluation& eval)
 {
     auto* func = eval.blueprint;
@@ -88,7 +93,7 @@ value_variant execute(evaluation& eval)
     const auto backup = params;
     auto exec_arg = [](auto& arg) { return execute(arg); };
     std::transform(args.begin(), args.end(), params.begin(), exec_arg);
-    auto result = execute(func->value);
+    auto result = execute(*func);
     params = backup;
     return result;
 }

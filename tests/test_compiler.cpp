@@ -66,44 +66,6 @@ TEST_CASE_FIXTURE(fixture, "compile reference in scope returns pointer to value"
     CHECK(type == "defined-type");
 }
 
-TEST_CASE("get_evaluation_prototype returns the expected value variant for literal")
-{
-    const runtime::expression expr = int32_t{0};
-    const runtime::value_variant proto = get_evaluation_prototype(expr);
-    CHECK(std::holds_alternative<int32_t>(proto));
-}
-
-TEST_CASE("get_evaluation_prototype returns the expected value variant for structure")
-{
-    const runtime::expression expr = runtime::structure{{int32_t{0}}};
-    const runtime::value_variant proto = get_evaluation_prototype(expr);
-    REQUIRE(std::holds_alternative<runtime::structure>(proto));
-    const auto instance = std::get<runtime::structure>(proto);
-    REQUIRE(instance.fields.size() == 1);
-    CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
-}
-
-TEST_CASE("get_evaluation_prototype returns the expected value variant for evaluation")
-{
-    runtime::function func;
-    func.value = int32_t{};
-    const runtime::expression expr = std::make_unique<runtime::evaluation>(&func);
-    const runtime::value_variant proto = get_evaluation_prototype(expr);
-    REQUIRE(std::holds_alternative<int32_t>(proto));
-}
-
-TEST_CASE("get_evaluation_prototype returns the expected value variant for construction")
-{
-    runtime::function func;
-    func.parameters = {int32_t{}};
-    func.value = std::make_unique<runtime::construction>(&func);
-    const runtime::value_variant proto = get_evaluation_prototype(func.value);
-    REQUIRE(std::holds_alternative<runtime::structure>(proto));
-    const auto instance = std::get<runtime::structure>(proto);
-    REQUIRE(instance.fields.size() == 1);
-    CHECK(std::holds_alternative<int32_t>(instance.fields.at(0)));
-}
-
 TEST_CASE_FIXTURE(fixture, "compile structure with no fields")
 {
     const ast::structure structure = {"my-structure", {}};
@@ -128,8 +90,8 @@ TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
     REQUIRE(is_success(result));
     const auto& prototype = get_success(result);
     REQUIRE(prototype->fields.size() == 1);
-    const runtime::value_variant field_type = get_evaluation_prototype(prototype->fields.at(0));
-    REQUIRE(std::holds_alternative<int32_t>(field_type));
+    const runtime::value_variant& field = prototype->fields.at(0);
+    REQUIRE(std::holds_alternative<int32_t>(field));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile evaluation of undefined function returns failure")
@@ -149,49 +111,6 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of nullary function")
     const auto& [value, type] = get_success(result);
     CHECK(value->blueprint == &func);
     CHECK(value->arguments.empty());
-}
-
-TEST_CASE("expression_type_matches returns false for different fundamental type")
-{
-    const runtime::value_variant val1 = int32_t{0};
-    const runtime::value_variant val2 = int64_t{0};
-    CHECK(!expression_type_matches(val1, val2));
-}
-
-TEST_CASE("expression_type_matches returns true for same fundamental types")
-{
-    const runtime::value_variant x1 = int32_t{13};
-    const runtime::value_variant x2 = int32_t{37};
-    CHECK(expression_type_matches(x1, x2));
-}
-
-TEST_CASE("expression_type_matches returns false for different structure types")
-{
-    const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
-    const runtime::value_variant x2 = runtime::structure{{int64_t{37}}};
-    REQUIRE(!expression_type_matches(x1, x2));
-}
-
-TEST_CASE("expression_type_matches returns true for simple isomorphic structure types")
-{
-    const runtime::value_variant x1 = runtime::structure{{int32_t{13}}};
-    const runtime::value_variant x2 = runtime::structure{{int32_t{37}}};
-    CHECK(expression_type_matches(x1, x2));
-}
-
-TEST_CASE("expression_type_matches returns false for different recursive structure types")
-{
-
-    const runtime::value_variant x1 = runtime::structure{{runtime::structure{{int32_t{13}}}}};
-    const runtime::value_variant x2 = runtime::structure{{runtime::structure{{int64_t{37}}}}};
-    CHECK(!expression_type_matches(x1, x2));
-}
-
-TEST_CASE("expression_type_matches returns true for isomorphic recursive structure types")
-{
-    const runtime::value_variant x1 = runtime::structure{{runtime::structure{{int32_t{13}}}}};
-    const runtime::value_variant x2 = runtime::structure{{runtime::structure{{int32_t{37}}}}};
-    CHECK(expression_type_matches(x1, x2));
 }
 
 TEST_CASE_FIXTURE(fixture,
@@ -570,50 +489,62 @@ TEST_CASE_FIXTURE(fixture, "fundamental operations are defined as expected")
 {
     SUBCASE("for + i32 i32")
     {
-        const auto func_query = find_function(env, "+", {"i32", "i32"});
+        auto func_query = find_function(env, "+", {"i32", "i32"});
         REQUIRE(is_success(func_query));
-        const auto& [return_type, plus] = get_success(func_query);
+        auto& [return_type, plus] = get_success(func_query);
         REQUIRE(plus->parameters.size() == 2);
         CHECK(std::holds_alternative<int32_t>(plus->parameters.at(0)));
         CHECK(std::holds_alternative<int32_t>(plus->parameters.at(1)));
-        CHECK(std::holds_alternative<int32_t>(get_evaluation_prototype(plus->value)));
+        CHECK(std::holds_alternative<int32_t>(runtime::execute(*plus)));
         CHECK(return_type == "i32");
     }
 
     SUBCASE("for + i64 i64")
     {
-        const auto func_query = find_function(env, "+", {"i64", "i64"});
+        auto func_query = find_function(env, "+", {"i64", "i64"});
         REQUIRE(is_success(func_query));
-        const auto& [return_type, plus] = get_success(func_query);
+        auto& [return_type, plus] = get_success(func_query);
         REQUIRE(plus->parameters.size() == 2);
         CHECK(std::holds_alternative<int64_t>(plus->parameters.at(0)));
         CHECK(std::holds_alternative<int64_t>(plus->parameters.at(1)));
-        CHECK(std::holds_alternative<int64_t>(get_evaluation_prototype(plus->value)));
+        CHECK(std::holds_alternative<int64_t>(runtime::execute(*plus)));
         CHECK(return_type == "i64");
+    }
+
+    SUBCASE("for - u8 u8")
+    {
+        auto func_query = find_function(env, "-", {"u8", "u8"});
+        REQUIRE(is_success(func_query));
+        auto& [return_type, minus] = get_success(func_query);
+        REQUIRE(minus->parameters.size() == 2);
+        CHECK(std::holds_alternative<uint8_t>(minus->parameters.at(0)));
+        CHECK(std::holds_alternative<uint8_t>(minus->parameters.at(1)));
+        CHECK(std::holds_alternative<uint8_t>(runtime::execute(*minus)));
+        CHECK(return_type == "u8");
     }
 
     SUBCASE("for * u16 u16")
     {
-        const auto func_query = find_function(env, "*", {"u16", "u16"});
+        auto func_query = find_function(env, "*", {"u16", "u16"});
         REQUIRE(is_success(func_query));
-        const auto& [return_type, plus] = get_success(func_query);
-        REQUIRE(plus->parameters.size() == 2);
-        CHECK(std::holds_alternative<uint16_t>(plus->parameters.at(0)));
-        CHECK(std::holds_alternative<uint16_t>(plus->parameters.at(1)));
-        CHECK(std::holds_alternative<uint16_t>(get_evaluation_prototype(plus->value)));
+        auto& [return_type, mult] = get_success(func_query);
+        REQUIRE(mult->parameters.size() == 2);
+        CHECK(std::holds_alternative<uint16_t>(mult->parameters.at(0)));
+        CHECK(std::holds_alternative<uint16_t>(mult->parameters.at(1)));
+        CHECK(std::holds_alternative<uint16_t>(runtime::execute(*mult)));
         CHECK(return_type == "u16");
     }
 
     SUBCASE("for / f32 f32")
     {
-        const auto func_query = find_function(env, "/", {"f32", "f32"});
+        auto func_query = find_function(env, "/", {"f32", "f32"});
         REQUIRE(is_success(func_query));
-        const auto& [return_type, plus] = get_success(func_query);
-        REQUIRE(plus->parameters.size() == 2);
-        CHECK(std::holds_alternative<flt32_t>(plus->parameters.at(0)));
-        CHECK(std::holds_alternative<flt32_t>(plus->parameters.at(1)));
-        plus->parameters.at(1) = flt32_t{1};
-        CHECK(std::holds_alternative<flt32_t>(get_evaluation_prototype(plus->value)));
+        auto& [return_type, div] = get_success(func_query);
+        REQUIRE(div->parameters.size() == 2);
+        CHECK(std::holds_alternative<flt32_t>(div->parameters.at(0)));
+        CHECK(std::holds_alternative<flt32_t>(div->parameters.at(1)));
+        div->parameters.at(1) = flt32_t{1};
+        CHECK(std::holds_alternative<flt32_t>(runtime::execute(*div)));
         CHECK(return_type == "f32");
     }
 }

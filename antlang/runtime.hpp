@@ -136,6 +136,8 @@ struct program
     std::vector<std::unique_ptr<evaluation>> evaluations;
 };
 
+value_variant execute(function& func);
+
 value_variant execute(evaluation& eval);
 
 structure execute(construction& ctor);

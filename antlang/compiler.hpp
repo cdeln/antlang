@@ -42,12 +42,6 @@ using compiler_expect =
         compiler_failure
     >;
 
-runtime::value_variant
-get_evaluation_prototype(runtime::expression const& expr);
-
-bool expression_type_matches(runtime::expression const& expr1,
-                             runtime::expression const& expr2);
-
 struct function_meta
 {
     std::string return_type;
