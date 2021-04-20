@@ -6,15 +6,15 @@ using namespace ant;
 
 struct recursive_struct;
 
-using recursive_variant =
-    std::variant<
+using test_variant =
+    recursive_variant<
         int,
         recursive_wrapper<recursive_struct>
     >;
 
 struct recursive_struct
 {
-    recursive_variant value;
+    test_variant value;
 };
 
 TEST_CASE("recursive wrapper works works like the type it wraps")
@@ -34,21 +34,21 @@ TEST_CASE("recursive wrapper works works like the type it wraps")
 
 TEST_CASE("is_recursive reports recursive structs as recursive")
 {
-    CHECK(!is_recursive_v<int, recursive_variant>);
-    CHECK( is_recursive_v<recursive_struct, recursive_variant>);
+    CHECK(!is_recursive_v<int, test_variant>);
+    CHECK( is_recursive_v<recursive_struct, test_variant>);
 }
 
 TEST_CASE("recursive wrapper in variant works as expected when used in a recursive context")
 {
-    recursive_variant x = 13;
+    test_variant x = 13;
     REQUIRE(holds<int>(x));
-    REQUIRE(get_recursive<int>(x) == 13);
+    REQUIRE(get<int>(x) == 13);
     x = recursive_struct{37};
     REQUIRE(holds<recursive_struct>(x));
-    static_assert(is_recursive_v<recursive_struct, recursive_variant>);
-    auto y = get_recursive<recursive_struct>(x);
+    static_assert(is_recursive_v<recursive_struct, test_variant>);
+    recursive_struct& y = get<recursive_struct>(x);
     REQUIRE(holds<int>(y.value));
-    CHECK(get_recursive<int>(y.value) == 37);
+    CHECK(get<int>(y.value) == 37);
 }
 
 struct visitor
@@ -65,7 +65,7 @@ struct visitor
 
 TEST_CASE("visit recursive wrapper works")
 {
-    recursive_variant x = 13;
+    test_variant x = 13;
     CHECK(visit(visitor(), x) == 1);
     x = recursive_struct{37};
     CHECK(visit(visitor(), x) == 2);

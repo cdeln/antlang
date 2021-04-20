@@ -58,6 +58,21 @@ public:
         return *this;
     }
 
+    constexpr T& get() &
+    {
+        return *value;
+    }
+
+    constexpr T const& get() const&
+    {
+        return *value;
+    }
+
+    constexpr T&& get() &&
+    {
+        return std::move(*value);
+    }
+
     constexpr operator T& () &
     {
         return *value;
@@ -74,6 +89,9 @@ public:
     }
 };
 
+template <typename... Ts>
+class recursive_variant;
+
 template <typename T, typename U>
 struct is_recursive
     : std::integral_constant<bool, false> {};
@@ -83,43 +101,165 @@ struct is_recursive<T, recursive_wrapper<U>>
     : std::integral_constant<bool, std::is_same_v<T, U>> {};
 
 template <typename T, typename... Ts>
-struct is_recursive<T, std::variant<Ts...>>
+struct is_recursive<T, recursive_variant<Ts...>>
     : std::integral_constant<bool, (is_recursive<T, Ts>::value || ...)> {};
 
 template <typename T, typename U>
 constexpr bool is_recursive_v = is_recursive<T, U>::value;
 
-template <typename T, typename Variant>
-constexpr bool holds(Variant const& variant) noexcept
+template <typename T>
+struct remove_qualifiers
 {
-    if constexpr (is_recursive<T, Variant>::value)
+    using type = std::remove_reference_t<std::remove_cv_t<T>>;
+};
+
+template <typename T>
+using remove_qualifiers_t = typename remove_qualifiers<T>::type;
+
+template <typename... Ts>
+struct recursive_variant
+{
+    using storage_type = std::variant<Ts...>;
+
+    storage_type storage;
+
+    constexpr recursive_variant()
+        noexcept(std::is_nothrow_default_constructible_v<storage_type>) = default;
+
+    constexpr recursive_variant(recursive_variant const& that) = default;
+
+    constexpr recursive_variant(recursive_variant&& that)
+        noexcept((std::is_nothrow_move_constructible_v<Ts> && ...)) = default;
+
+    template <
+        typename T,
+        typename =
+            std::enable_if_t<
+                !std::is_same_v<
+                    remove_qualifiers_t<T>,
+                    recursive_variant
+                 >
+            >
+    >
+    constexpr recursive_variant(T&& x)
+        noexcept((std::is_nothrow_constructible_v<Ts, T> && ...))
+        : storage(std::forward<T>(x))
     {
-        return std::holds_alternative<recursive_wrapper<T>>(variant);
+    }
+
+    constexpr recursive_variant& operator=(recursive_variant const& that)
+    {
+        this->storage = that.storage;
+        return *this;
+    }
+
+    constexpr recursive_variant& operator=(recursive_variant&& that)
+    {
+        this->storage = std::move(that.storage);
+        return *this;
+    }
+
+    template <
+        typename T,
+        typename =
+            std::enable_if_t<
+                !std::is_same_v<
+                    remove_qualifiers_t<T>,
+                    recursive_variant
+                 >
+            >
+    >
+    constexpr recursive_variant& operator=(T&& value)
+    {
+        this->storage = std::forward<T>(value);
+        return *this;
+    }
+
+    virtual ~recursive_variant() = default;
+};
+
+template <typename T, typename... Ts>
+constexpr bool holds(recursive_variant<Ts...> const& variant) noexcept
+{
+    if constexpr (is_recursive_v<T, recursive_variant<Ts...>>)
+    {
+        return std::holds_alternative<recursive_wrapper<T>>(variant.storage);
     }
     else
     {
-        return std::holds_alternative<T>(variant);
+        return std::holds_alternative<T>(variant.storage);
     }
 }
 
-template <typename T, typename Variant>
-constexpr decltype(auto) get_recursive(Variant&& variant)
+template <typename T, typename... Ts>
+constexpr T const& get(recursive_variant<Ts...> const& variant)
 {
-    if constexpr (is_recursive<T, std::remove_reference_t<std::remove_const_t<Variant>>>::value)
+    if constexpr (is_recursive_v<T, recursive_variant<Ts...>>)
     {
-        return static_cast<T>(std::get<recursive_wrapper<T>>(std::forward<Variant>(variant)));
+        return std::get<recursive_wrapper<T>>(variant.storage);
     }
     else
     {
-        return std::get<T>(std::forward<Variant>(variant));
+        return std::get<T>(variant.storage);
+    }
+}
+
+template <typename T, typename... Ts>
+constexpr T& get(recursive_variant<Ts...>& variant)
+{
+    if constexpr (is_recursive_v<T, recursive_variant<Ts...>>)
+    {
+        return std::get<recursive_wrapper<T>>(variant.storage);
+    }
+    else
+    {
+        return std::get<T>(variant.storage);
+    }
+}
+
+template <typename T, typename... Ts>
+constexpr T&& get(recursive_variant<Ts...>&& variant)
+{
+    if constexpr (is_recursive_v<T, recursive_variant<Ts...>>)
+    {
+        return std::get<recursive_wrapper<T>>(std::move(variant.storage));
+    }
+    else
+    {
+        return std::get<T>(variant.storage);
     }
 }
 
 template <typename Visitor, typename Variant>
+struct recursive_visitor
+{
+    Visitor visitor;
+
+    constexpr recursive_visitor(Visitor visitor)
+        noexcept(std::is_nothrow_move_constructible_v<Visitor>)
+        : visitor(std::move(visitor)) {}
+
+    template <typename T>
+    constexpr decltype(auto) operator()(T&& x)
+    {
+        if constexpr (is_recursive_v<remove_qualifiers_t<T>, Variant>)
+        {
+            return visitor(std::forward<T>(x).get());
+        }
+        else
+        {
+            return visitor(std::forward<T>(x));
+        }
+    }
+};
+
+template <typename Visitor, typename Variant>
 decltype(auto) visit(Visitor&& visitor, Variant&& variant)
 {
-    return std::visit(std::forward<Visitor>(visitor),
-                      std::forward<Variant>(variant));
+    using visitor_type = remove_qualifiers_t<Visitor>;
+    using variant_type = remove_qualifiers_t<Variant>;
+    return std::visit(recursive_visitor<visitor_type, variant_type>(std::forward<Visitor>(visitor)),
+                      std::forward<Variant>(variant).storage);
 }
 
 }  // namespace ant
