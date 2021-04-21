@@ -15,7 +15,7 @@ TEST_CASE("can parse alternative expression")
         const auto result = parser.parse(tokens.cbegin(), tokens.cend());
         REQUIRE(is_success(result));
         const auto [value, pos] = get_success(result);
-        CHECK(std::holds_alternative<none>(value));
+        CHECK(holds<none>(value));
         CHECK(pos == tokens.cend());
     }
 
@@ -25,8 +25,8 @@ TEST_CASE("can parse alternative expression")
         const auto result = parser.parse(tokens.cbegin(), tokens.cend());
         REQUIRE(is_success(result));
         const auto [value, pos] = get_success(result);
-        REQUIRE(std::holds_alternative<std::string>(value));
-        CHECK(std::get<std::string>(value) == "name");
+        REQUIRE(holds<std::string>(value));
+        CHECK(get<std::string>(value) == "name");
         CHECK(pos == tokens.cend());
     }
 }

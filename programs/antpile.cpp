@@ -118,7 +118,7 @@ std::string format(ant::runtime::structure const& structure)
 
 std::string format(ant::runtime::value_variant const& value)
 {
-    return std::visit([](auto const& x) { return format(x); },
+    return visit([](auto const& x) { return format(x); },
                       static_cast<ant::runtime::value_variant_base const&>(value));
 }
 

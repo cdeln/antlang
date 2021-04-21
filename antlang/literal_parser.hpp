@@ -72,14 +72,14 @@ struct parser<literal_rule<Literal, Token>>
             message << "Unexpected end of input while parsing token";
             throw unexpected_end_of_input_error(message.str());
         }
-        if (!std::holds_alternative<Token>(pos->variant))
+        if (!holds<Token>(pos->variant))
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
                     << ", got " << quote(token_name(pos->variant));
             return parser_failure{message.str(), pos->context};
         }
-        const auto alternative = std::get<Token>(pos->variant);
+        const auto alternative = get<Token>(pos->variant);
         static_assert(std::is_same_v<Token, boolean_literal_token> ||
                       std::is_same_v<Token, integer_literal_token> ||
                       std::is_same_v<Token, floating_point_literal_token>);

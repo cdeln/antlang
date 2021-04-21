@@ -12,25 +12,6 @@ namespace ant
 namespace ast
 {
 
-template <typename Alternative, typename Variant>
-constexpr bool holds(Variant const& variant) noexcept
-{
-    return std::holds_alternative<Alternative>(variant);
-}
-
-template <typename Alternative, typename Variant>
-constexpr decltype(auto) get(Variant&& variant)
-{
-    return std::get<Alternative>(std::forward<Variant>(variant));
-}
-
-template <typename Visitor, typename Variant>
-decltype(auto) visit(Visitor&& visitor, Variant&& variant)
-{
-    return std::visit(std::forward<Visitor>(visitor),
-                      std::forward<Variant>(variant));
-}
-
 template <typename T>
 token_context
 get_context(T&& x)
@@ -47,7 +28,7 @@ get_context(recursive_wrapper<T> const& x)
 
 template <typename... Ts>
 token_context
-get_context(std::variant<Ts...> const& v)
+get_context(recursive_variant<Ts...> const& v)
 {
     return visit([](auto const& x) { return get_context(x); }, v);
 }
@@ -76,7 +57,7 @@ using f32 = literal<flt32_t>;
 using f64 = literal<flt64_t>;
 
 using literal_variant =
-    std::variant<
+    recursive_variant<
         boolean,
         i8, i16, i32, i64,
         u8, u16, u32, u64,
@@ -101,7 +82,7 @@ struct condition;
 struct evaluation;
 
 using expression =
-    std::variant<
+    recursive_variant<
         reference,
         literal_variant,
         evaluation,
@@ -145,13 +126,16 @@ struct structure
 };
 
 using statement =
-    std::variant<
+    recursive_variant<
         evaluation,
         function,
         structure
     >;
 
-using program = std::vector<statement>;
+struct program
+{
+    std::vector<statement> statements;
+};
 
 template <typename T>
 struct name_of

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "fundamental_types.hpp"
+#include "recursive_variant.hpp"
 
 #include <algorithm>
 #include <functional>
 #include <memory>
 #include <stdexcept>
-#include <variant>
 #include <vector>
 
 namespace ant
@@ -22,7 +22,7 @@ struct structure
 };
 
 using value_variant_base =
-    std::variant<
+    recursive_variant<
         bool,
         int8_t,  int16_t,  int32_t,  int64_t,
         uint8_t, uint16_t, uint32_t, uint64_t,
@@ -30,7 +30,7 @@ using value_variant_base =
         structure
     >;
 
-struct value_variant : value_variant_base
+struct value_variant : public value_variant_base
 {
     using value_variant_base::value_variant_base;
 };
@@ -40,8 +40,8 @@ struct evaluation;
 struct construction;
 struct condition;
 
-using expression_base =
-    std::variant<
+using expression =
+    recursive_variant<
         value_variant,
         value_variant*,
         std::unique_ptr<operation>,
@@ -50,10 +50,10 @@ using expression_base =
         std::unique_ptr<condition>
     >;
 
-struct expression : expression_base
-{
-    using expression_base::expression_base;
-};
+// struct expression : public expression_base
+// {
+//     using expression_base::expression_base;
+// };
 
 struct function
 {
@@ -73,14 +73,14 @@ struct operation
 };
 
 template <template <typename> class Operator, typename Type>
-struct fundamental_operation final : operation
+struct fundamental_operation final : public operation
 {
     fundamental_operation(function* blueprint)
         : operation(blueprint)
     {
         for (size_t i = 0; i < 2; ++i)
         {
-            if (!std::holds_alternative<Type>(blueprint->parameters.at(i)))
+            if (!holds<Type>(blueprint->parameters.at(i)))
             {
                 throw std::invalid_argument("operation blueprint invalid parameter type");
             }
@@ -90,8 +90,8 @@ struct fundamental_operation final : operation
     value_variant execute()
     {
         Operator<Type> op;
-        Type const& arg0 = std::get<Type>(blueprint->parameters.at(0));
-        Type const& arg1 = std::get<Type>(blueprint->parameters.at(1));
+        Type const& arg0 = get<Type>(blueprint->parameters.at(0));
+        Type const& arg1 = get<Type>(blueprint->parameters.at(1));
         return op(arg0, arg1);
     }
 };

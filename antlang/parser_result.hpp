@@ -1,8 +1,8 @@
 #pragma once
 
+#include "recursive_variant.hpp"
 #include "tokens.hpp"
 
-#include <variant>
 #include <vector>
 
 namespace ant
@@ -24,7 +24,7 @@ struct parser_failure
 
 template <typename Attribute>
 using parser_result =
-    std::variant<
+    recursive_variant<
         parser_success<Attribute>,
         parser_failure
     >;
@@ -32,41 +32,41 @@ using parser_result =
 template <typename Attribute>
 bool is_success(const parser_result<Attribute>& result)
 {
-    return std::holds_alternative<parser_success<Attribute>>(result);
+    return holds<parser_success<Attribute>>(result);
 }
 
 template <typename Attribute>
 bool is_failure(const parser_result<Attribute>& result)
 {
-    return std::holds_alternative<parser_failure>(result);
+    return holds<parser_failure>(result);
 }
 
 template <typename Attribute>
 parser_success<Attribute>&
 get_success(parser_result<Attribute>& result)
 {
-    return std::get<parser_success<Attribute>>(result);
+    return get<parser_success<Attribute>>(result);
 }
 
 template <typename Attribute>
 parser_success<Attribute> const&
 get_success(parser_result<Attribute> const& result)
 {
-    return std::get<parser_success<Attribute>>(result);
+    return get<parser_success<Attribute>>(result);
 }
 
 template <typename Attribute>
 parser_failure&
 get_failure(parser_result<Attribute>& result)
 {
-    return std::get<parser_failure>(result);
+    return get<parser_failure>(result);
 }
 
 template <typename Attribute>
 parser_failure const&
 get_failure(parser_result<Attribute> const& result)
 {
-    return std::get<parser_failure>(result);
+    return get<parser_failure>(result);
 }
 
 } // namespace ant

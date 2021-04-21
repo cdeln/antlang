@@ -22,7 +22,7 @@ TEST_CASE_FIXTURE(fixture, "compile literal")
     const auto result = compile(env, literal);
     REQUIRE(is_success(result));
     auto const& [value, type] = get_success(result);
-    REQUIRE(std::holds_alternative<int32_t>(value));
+    REQUIRE(holds<int32_t>(value));
     REQUIRE(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
@@ -91,7 +91,7 @@ TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
     const auto& prototype = get_success(result);
     REQUIRE(prototype->fields.size() == 1);
     const runtime::value_variant& field = prototype->fields.at(0);
-    REQUIRE(std::holds_alternative<int32_t>(field));
+    REQUIRE(holds<int32_t>(field));
 }
 
 TEST_CASE_FIXTURE(fixture, "compile evaluation of undefined function returns failure")
@@ -156,10 +156,10 @@ TEST_CASE_FIXTURE(fixture, "compile literal value expression")
     const compiler_expect<runtime::expression> result = compile(env, scope, expr);
     REQUIRE(is_success(result));
     const auto& [compiled, type] = get_success(result);
-    REQUIRE(std::holds_alternative<runtime::value_variant>(compiled));
-    const auto value = std::get<runtime::value_variant>(compiled);
-    REQUIRE(std::holds_alternative<int32_t>(value));
-    CHECK(std::get<int32_t>(value) == 1337);
+    REQUIRE(holds<runtime::value_variant>(compiled));
+    const auto value = get<runtime::value_variant>(compiled);
+    REQUIRE(holds<int32_t>(value));
+    CHECK(get<int32_t>(value) == 1337);
     CHECK(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
@@ -174,8 +174,8 @@ TEST_CASE_FIXTURE(fixture, "compile parameter reference expression")
     const compiler_expect<runtime::expression> result = compile(env, scope, expr);
     REQUIRE(is_success(result));
     const auto& [compiled, type ] = get_success(result);
-    REQUIRE(std::holds_alternative<runtime::value_variant*>(compiled));
-    const auto* ptr = std::get<runtime::value_variant*>(compiled);
+    REQUIRE(holds<runtime::value_variant*>(compiled));
+    const auto* ptr = get<runtime::value_variant*>(compiled);
     CHECK(ptr == &param);
     CHECK(type == "defined-type");
 }
@@ -191,8 +191,8 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation expression")
     const auto result = compile(env, scope, expr);
     REQUIRE(is_success(result));
     const auto& [expr_value, expr_type] = get_success(result);
-    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(expr_value));
-    const auto& compiled = std::get<std::unique_ptr<runtime::evaluation>>(expr_value);
+    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(expr_value));
+    const auto& compiled = get<std::unique_ptr<runtime::evaluation>>(expr_value);
     CHECK(compiled->blueprint == &func);
     CHECK(compiled->arguments.empty());
     CHECK(expr_type == "return-type");
@@ -238,10 +238,10 @@ TEST_CASE_FIXTURE(fixture, "compile nullary value expression function")
     const auto& [meta, compiled] = get_success(result);
     CHECK(compiled->parameters.empty());
     CHECK(compiled->parameters.empty());
-    REQUIRE(std::holds_alternative<runtime::value_variant>(compiled->value));
-    const auto variant = std::get<runtime::value_variant>(compiled->value);
-    REQUIRE(std::holds_alternative<int32_t>(variant));
-    const auto value = std::get<int32_t>(variant);
+    REQUIRE(holds<runtime::value_variant>(compiled->value));
+    const auto variant = get<runtime::value_variant>(compiled->value);
+    REQUIRE(holds<int32_t>(variant));
+    const auto value = get<int32_t>(variant);
     CHECK(value == 1337);
     CHECK(meta.return_type == "i32");
     CHECK(meta.parameter_types.empty());
@@ -277,8 +277,8 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid parameter referenc
     const auto result = compile(env, func);
     REQUIRE(is_success(result));
     const auto& [meta, compiled] = get_success(result);
-    REQUIRE(std::holds_alternative<runtime::value_variant*>(compiled->value));
-    const auto* ptr = std::get<runtime::value_variant*>(compiled->value);
+    REQUIRE(holds<runtime::value_variant*>(compiled->value));
+    const auto* ptr = get<runtime::value_variant*>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
     CHECK(ptr == &compiled->parameters.at(0));
     CHECK(meta.return_type == "i32");
@@ -326,13 +326,13 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     const auto result = compile(env, func);
     REQUIRE(is_success(result));
     const auto& [meta, compiled] = get_success(result);
-    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(compiled->value));
-    const auto& eval = std::get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(compiled->value));
+    const auto& eval = get<std::unique_ptr<runtime::evaluation>>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
     REQUIRE(eval->blueprint == &i32);
     REQUIRE(eval->arguments.size() == 1);
-    REQUIRE(std::holds_alternative<runtime::value_variant*>(eval->arguments.at(0)));
-    const auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
+    REQUIRE(holds<runtime::value_variant*>(eval->arguments.at(0)));
+    const auto* argument = get<runtime::value_variant*>(eval->arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
     CHECK(meta.return_type == "i32");
     REQUIRE(meta.parameter_types.size() == 1);
@@ -493,9 +493,9 @@ TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, plus] = get_success(func_query);
         REQUIRE(plus->parameters.size() == 2);
-        CHECK(std::holds_alternative<int32_t>(plus->parameters.at(0)));
-        CHECK(std::holds_alternative<int32_t>(plus->parameters.at(1)));
-        CHECK(std::holds_alternative<int32_t>(runtime::execute(*plus)));
+        CHECK(holds<int32_t>(plus->parameters.at(0)));
+        CHECK(holds<int32_t>(plus->parameters.at(1)));
+        CHECK(holds<int32_t>(runtime::execute(*plus)));
         CHECK(return_type == "i32");
     }
 
@@ -505,9 +505,9 @@ TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, plus] = get_success(func_query);
         REQUIRE(plus->parameters.size() == 2);
-        CHECK(std::holds_alternative<int64_t>(plus->parameters.at(0)));
-        CHECK(std::holds_alternative<int64_t>(plus->parameters.at(1)));
-        CHECK(std::holds_alternative<int64_t>(runtime::execute(*plus)));
+        CHECK(holds<int64_t>(plus->parameters.at(0)));
+        CHECK(holds<int64_t>(plus->parameters.at(1)));
+        CHECK(holds<int64_t>(runtime::execute(*plus)));
         CHECK(return_type == "i64");
     }
 
@@ -517,9 +517,9 @@ TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, minus] = get_success(func_query);
         REQUIRE(minus->parameters.size() == 2);
-        CHECK(std::holds_alternative<uint8_t>(minus->parameters.at(0)));
-        CHECK(std::holds_alternative<uint8_t>(minus->parameters.at(1)));
-        CHECK(std::holds_alternative<uint8_t>(runtime::execute(*minus)));
+        CHECK(holds<uint8_t>(minus->parameters.at(0)));
+        CHECK(holds<uint8_t>(minus->parameters.at(1)));
+        CHECK(holds<uint8_t>(runtime::execute(*minus)));
         CHECK(return_type == "u8");
     }
 
@@ -529,9 +529,9 @@ TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, mult] = get_success(func_query);
         REQUIRE(mult->parameters.size() == 2);
-        CHECK(std::holds_alternative<uint16_t>(mult->parameters.at(0)));
-        CHECK(std::holds_alternative<uint16_t>(mult->parameters.at(1)));
-        CHECK(std::holds_alternative<uint16_t>(runtime::execute(*mult)));
+        CHECK(holds<uint16_t>(mult->parameters.at(0)));
+        CHECK(holds<uint16_t>(mult->parameters.at(1)));
+        CHECK(holds<uint16_t>(runtime::execute(*mult)));
         CHECK(return_type == "u16");
     }
 
@@ -541,10 +541,10 @@ TEST_CASE_FIXTURE(fixture, "arithmetic operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, div] = get_success(func_query);
         REQUIRE(div->parameters.size() == 2);
-        CHECK(std::holds_alternative<flt32_t>(div->parameters.at(0)));
-        CHECK(std::holds_alternative<flt32_t>(div->parameters.at(1)));
+        CHECK(holds<flt32_t>(div->parameters.at(0)));
+        CHECK(holds<flt32_t>(div->parameters.at(1)));
         div->parameters.at(1) = flt32_t{1};
-        CHECK(std::holds_alternative<flt32_t>(runtime::execute(*div)));
+        CHECK(holds<flt32_t>(runtime::execute(*div)));
         CHECK(return_type == "f32");
     }
 }
@@ -557,9 +557,9 @@ TEST_CASE_FIXTURE(fixture, "comparison operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, equals] = get_success(func_query);
         REQUIRE(equals->parameters.size() == 2);
-        CHECK(std::holds_alternative<uint32_t>(equals->parameters.at(0)));
-        CHECK(std::holds_alternative<uint32_t>(equals->parameters.at(1)));
-        CHECK(std::holds_alternative<bool>(runtime::execute(*equals)));
+        CHECK(holds<uint32_t>(equals->parameters.at(0)));
+        CHECK(holds<uint32_t>(equals->parameters.at(1)));
+        CHECK(holds<bool>(runtime::execute(*equals)));
         CHECK(return_type == "bool");
     }
 
@@ -569,9 +569,9 @@ TEST_CASE_FIXTURE(fixture, "comparison operations are defined as expected")
         REQUIRE(is_success(func_query));
         auto& [return_type, less] = get_success(func_query);
         REQUIRE(less->parameters.size() == 2);
-        CHECK(std::holds_alternative<flt64_t>(less->parameters.at(0)));
-        CHECK(std::holds_alternative<flt64_t>(less->parameters.at(1)));
-        CHECK(std::holds_alternative<bool>(runtime::execute(*less)));
+        CHECK(holds<flt64_t>(less->parameters.at(0)));
+        CHECK(holds<flt64_t>(less->parameters.at(1)));
+        CHECK(holds<bool>(runtime::execute(*less)));
         CHECK(return_type == "bool");
     }
 }
@@ -604,13 +604,13 @@ TEST_CASE_FIXTURE(fixture, "compile recursive function")
     }
     REQUIRE(is_success(result));
     const auto& [meta, compiled] = get_success(result);
-    REQUIRE(std::holds_alternative<std::unique_ptr<runtime::evaluation>>(compiled->value));
-    const auto& eval = std::get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(compiled->value));
+    const auto& eval = get<std::unique_ptr<runtime::evaluation>>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
     REQUIRE(eval->blueprint == compiled.get());
     REQUIRE(eval->arguments.size() == 1);
-    REQUIRE(std::holds_alternative<runtime::value_variant*>(eval->arguments.at(0)));
-    const auto* argument = std::get<runtime::value_variant*>(eval->arguments.at(0));
+    REQUIRE(holds<runtime::value_variant*>(eval->arguments.at(0)));
+    const auto* argument = get<runtime::value_variant*>(eval->arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
     CHECK(meta.return_type == "i32");
     REQUIRE(meta.parameter_types.size() == 1);

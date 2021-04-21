@@ -23,7 +23,7 @@ struct parser<non_attributed_token_rule<Token>>
             message << "Unexpected end of input while parsing token";
             throw unexpected_end_of_input_error(message.str());
         }
-        if (!std::holds_alternative<Token>(pos->variant))
+        if (!holds<Token>(pos->variant))
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
@@ -47,14 +47,14 @@ struct parser<attributed_token_rule<Token, Attribute>>
             message << "Unexpected end of input while parsing token";
             throw unexpected_end_of_input_error(message.str());
         }
-        if (!std::holds_alternative<Token>(pos->variant))
+        if (!holds<Token>(pos->variant))
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
                     << ", got " << quote(token_name(pos->variant));
             return parser_failure{message.str(), pos->context};
         }
-        return parser_success<Attribute>{std::get<Token>(pos->variant).value, pos + 1};
+        return parser_success<Attribute>{get<Token>(pos->variant).value, pos + 1};
     }
 };
 
@@ -71,7 +71,7 @@ struct parser<attributed_token_rule<Token, none>>
             message << "Unexpected end of input while parsing token";
             throw unexpected_end_of_input_error(message.str());
         }
-        if (!std::holds_alternative<Token>(pos->variant))
+        if (!holds<Token>(pos->variant))
         {
             std::stringstream message;
             message << "Expected token " << quote(Token::name)

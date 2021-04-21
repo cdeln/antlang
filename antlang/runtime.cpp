@@ -41,7 +41,7 @@ value_variant execute(condition& cond)
 {
     for (auto& [check_expr, value_expr] : cond.branches)
     {
-        if (std::get<bool>(execute(check_expr)))
+        if (get<bool>(execute(check_expr)))
         {
             return execute(value_expr);
         }
@@ -84,7 +84,7 @@ struct expression_executor
 
 value_variant execute(expression& expr)
 {
-    return std::visit(expression_executor(), static_cast<expression_base&>(expr));
+    return visit(expression_executor(), expr);
 }
 
 }  // namespace runtime

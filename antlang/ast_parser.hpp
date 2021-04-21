@@ -61,7 +61,7 @@ struct parser<ast_rule<Attribute>>
         if (is_success(result))
         {
             auto [value, next] = get_success(result);
-            Attribute converted = convert<Attribute>(std::move(value));
+            attribute_type converted = convert<attribute_type>(std::move(value));
             if constexpr (has_context<Attribute>())
             {
                 converted.context = pos->context;

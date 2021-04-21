@@ -1,7 +1,8 @@
 #pragma once
 
+#include "recursive_variant.hpp"
+
 #include <string>
-#include <variant>
 
 namespace ant
 {
@@ -71,7 +72,7 @@ struct end_of_input_token
 };
 
 using token_variant =
-    std::variant<
+    recursive_variant<
         left_parenthesis_token,
         right_parenthesis_token,
         function_token,

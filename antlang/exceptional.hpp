@@ -1,6 +1,6 @@
 #pragma once
 
-#include <variant>
+#include "recursive_variant.hpp"
 
 namespace ant
 {
@@ -8,7 +8,7 @@ namespace ant
 template <typename Success, typename Failure>
 struct exceptional
 {
-    std::variant<Success, Failure> value;
+    recursive_variant<Success, Failure> value;
 
     constexpr exceptional() = default;
 
@@ -28,41 +28,41 @@ struct exceptional
 template <typename Success, typename Failure>
 bool is_success(exceptional<Success, Failure> const& result)
 {
-    return std::holds_alternative<Success>(result.value);
+    return holds<Success>(result.value);
 }
 
 template <typename Success, typename Failure>
 bool is_failure(exceptional<Success, Failure> const& result)
 {
-    return std::holds_alternative<Failure>(result.value);
+    return holds<Failure>(result.value);
 }
 
 template <typename Success, typename Failure>
 Success&
 get_success(exceptional<Success, Failure>& result)
 {
-    return std::get<Success>(result.value);
+    return get<Success>(result.value);
 }
 
 template <typename Success, typename Failure>
 Success const&
 get_success(exceptional<Success, Failure> const& result)
 {
-    return std::get<Success>(result.value);
+    return get<Success>(result.value);
 }
 
 template <typename Success, typename Failure>
 Failure&
 get_failure(exceptional<Success, Failure>& result)
 {
-    return std::get<Failure>(result.value);
+    return get<Failure>(result.value);
 }
 
 template <typename Success, typename Failure>
 Failure const&
 get_failure(exceptional<Success, Failure> const& result)
 {
-    return std::get<Failure>(result.value);
+    return get<Failure>(result.value);
 }
 
 }  // namespace ant

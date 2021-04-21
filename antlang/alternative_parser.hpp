@@ -39,7 +39,7 @@ struct parser<alternative<Ts...>>
         auto result = parser.parse(pos, end);
         if (is_success(result))
         {
-            auto [value, next] = get_success(result);
+            auto& [value, next] = get_success(result);
             return parser_success<attribute_type>{std::move(value), next};
         }
         else
@@ -47,7 +47,7 @@ struct parser<alternative<Ts...>>
             auto sub_result = recursive_sub_parse(std::index_sequence<Is...>(), pos, end);
             if (is_success(sub_result))
             {
-                return get_success(sub_result);
+                return std::move(get_success(sub_result));
             }
             else
             {

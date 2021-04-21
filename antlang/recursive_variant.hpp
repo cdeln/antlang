@@ -129,31 +129,32 @@ struct recursive_variant
     constexpr recursive_variant(recursive_variant const& that) = default;
 
     constexpr recursive_variant(recursive_variant&& that)
-        noexcept((std::is_nothrow_move_constructible_v<Ts> && ...)) = default;
+        noexcept(std::is_nothrow_move_constructible_v<storage_type>) = default;
 
     template <
         typename T,
         typename =
             std::enable_if_t<
-                !std::is_same_v<
-                    remove_qualifiers_t<T>,
-                    recursive_variant
+                !std::is_base_of_v<
+                    recursive_variant,
+                    remove_qualifiers_t<T>
                  >
             >
     >
-    constexpr recursive_variant(T&& x)
-        noexcept((std::is_nothrow_constructible_v<Ts, T> && ...))
+    constexpr recursive_variant(T&& x) noexcept(std::is_nothrow_constructible_v<storage_type, T>)
         : storage(std::forward<T>(x))
     {
     }
 
-    constexpr recursive_variant& operator=(recursive_variant const& that)
+    constexpr recursive_variant& operator=(recursive_variant const& that) &
     {
         this->storage = that.storage;
         return *this;
     }
 
-    constexpr recursive_variant& operator=(recursive_variant&& that)
+    constexpr recursive_variant& operator=(recursive_variant&& that) &
+        noexcept(((std::is_nothrow_move_constructible_v<Ts> &&
+                   std::is_nothrow_move_assignable_v<Ts>)   && ...))
     {
         this->storage = std::move(that.storage);
         return *this;
@@ -163,13 +164,15 @@ struct recursive_variant
         typename T,
         typename =
             std::enable_if_t<
-                !std::is_same_v<
-                    remove_qualifiers_t<T>,
-                    recursive_variant
+                !std::is_base_of_v<
+                    recursive_variant,
+                    remove_qualifiers_t<T>
                  >
             >
     >
-    constexpr recursive_variant& operator=(T&& value)
+    constexpr recursive_variant& operator=(T&& value) &
+        noexcept(((std::is_nothrow_assignable_v<Ts&, T>    &&
+                   std::is_nothrow_constructible_v<Ts, T>) && ...))
     {
         this->storage = std::forward<T>(value);
         return *this;
@@ -222,11 +225,11 @@ constexpr T&& get(recursive_variant<Ts...>&& variant)
 {
     if constexpr (is_recursive_v<T, recursive_variant<Ts...>>)
     {
-        return std::get<recursive_wrapper<T>>(std::move(variant.storage));
+        return std::get<recursive_wrapper<T>>(std::move(variant).storage);
     }
     else
     {
-        return std::get<T>(variant.storage);
+        return std::get<T>(std::move(variant).storage);
     }
 }
 

@@ -67,7 +67,7 @@ struct literal_compiler
 compiler_expect<runtime::value_variant>
 compile(compiler_environment const& env, ast::literal_variant const& literal)
 {
-    return ast::visit(literal_compiler{env}, literal);
+    return visit(literal_compiler{env}, literal);
 }
 
 compiler_expect<runtime::value_variant>
@@ -317,7 +317,7 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::expression const& expr)
 {
-    return ast::visit(expression_compiler{env, scope}, expr);
+    return visit(expression_compiler{env, scope}, expr);
 }
 
 exceptional<compiled_function_result, compiler_failure>
@@ -510,17 +510,17 @@ compile(runtime::program& prog,
         compiler_environment& env,
         ast::statement const& statement)
 {
-    return std::visit(statement_compiler{env, prog}, statement);
+    return visit(statement_compiler{env, prog}, statement);
 }
 
 std::vector<compiler_status>
 compile(runtime::program& prog,
         compiler_environment& env,
-        ast::program const& statements)
+        ast::program const& ast)
 {
     std::vector<compiler_status> summary;
-    summary.reserve(statements.size());
-    for (const auto& statement : statements)
+    summary.reserve(ast.statements.size());
+    for (const auto& statement : ast.statements)
     {
         summary.push_back(compile(prog, env, statement));
         if (is_failure(summary.back()))
@@ -548,7 +548,9 @@ void add_fundamental_operation(
 
     auto op = std::make_unique<runtime::function>();
     op->parameters = {Type{}, Type{}};
-    op->value = std::make_unique<runtime::fundamental_operation<Operator, Type>>(op.get());
+    std::unique_ptr<runtime::operation> value =
+        std::make_unique<runtime::fundamental_operation<Operator, Type>>(op.get());
+    op->value = std::move(value);
 
     prog.functions.push_back(std::move(op));
 

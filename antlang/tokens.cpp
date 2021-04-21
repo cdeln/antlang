@@ -19,7 +19,7 @@ struct token_name_visitor
 
 std::string token_name(token_variant const& variant)
 {
-    return std::visit(token_name_visitor(), variant);
+    return visit(token_name_visitor(), variant);
 }
 
 } // ant

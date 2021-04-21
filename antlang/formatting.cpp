@@ -49,7 +49,7 @@ std::string quote(std::string const& x)
 
 std::string token_string(token_variant const& x)
 {
-    return std::visit(token_alternative_string(), x);
+    return visit(token_alternative_string(), x);
 }
 
 } // namespace

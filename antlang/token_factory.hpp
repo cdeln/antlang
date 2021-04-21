@@ -44,6 +44,6 @@ struct token_factory_builder
 };
 
 template <class... Tokens>
-struct token_factory_builder<std::variant<Tokens...>> : token_factory_builder<Tokens...> {};
+struct token_factory_builder<recursive_variant<Tokens...>> : token_factory_builder<Tokens...> {};
 
 } // namespace ant
