@@ -23,10 +23,16 @@ struct parser_failure
 };
 
 template <typename Attribute>
-using parser_result =
+struct parser_result : public
     exceptional<
         parser_success<Attribute>,
         parser_failure
-    >;
+    >
+{
+    using exceptional<
+        parser_success<Attribute>,
+        parser_failure
+    >::exceptional;
+};
 
 } // namespace ant

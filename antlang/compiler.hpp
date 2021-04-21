@@ -22,11 +22,17 @@ struct compiler_failure
     token_context context;
 };
 
-using compiler_status =
+struct compiler_status : public
     exceptional<
         compiler_success,
         compiler_failure
-    >;
+    >
+{
+    using exceptional<
+        compiler_success,
+        compiler_failure
+    >::exceptional;
+};
 
 template <typename T>
 struct compiler_result
@@ -36,11 +42,17 @@ struct compiler_result
 };
 
 template <typename T>
-using compiler_expect =
+struct compiler_expect : public
     exceptional<
         compiler_result<T>,
         compiler_failure
-    >;
+    >
+{
+    using exceptional<
+        compiler_result<T>,
+        compiler_failure
+    >::exceptional;
+};
 
 struct function_meta
 {
