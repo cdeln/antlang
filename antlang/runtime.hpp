@@ -40,7 +40,7 @@ struct evaluation;
 struct construction;
 struct condition;
 
-using expression =
+using expression_base =
     recursive_variant<
         value_variant,
         value_variant*,
@@ -50,10 +50,10 @@ using expression =
         std::unique_ptr<condition>
     >;
 
-// struct expression : public expression_base
-// {
-//     using expression_base::expression_base;
-// };
+struct expression : public expression_base
+{
+    using expression_base::expression_base;
+};
 
 struct function
 {
