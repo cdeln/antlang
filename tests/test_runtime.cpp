@@ -146,15 +146,14 @@ TEST_CASE("execute condition with evaluation check and literal value type")
     identity.parameters = {bool{}};
     identity.value = &identity.parameters.at(0);
 
-    auto eval_ptr_1 = std::make_unique<evaluation>(&identity);
-    auto eval_ptr_2 = std::make_unique<evaluation>(&identity);
-    evaluation& eval1 = *eval_ptr_1.get();
-    evaluation& eval2 = *eval_ptr_2.get();
-    expression expr1 = std::move(eval_ptr_1);
-    expression expr2 = std::move(eval_ptr_2);
+    expression expr1 = evaluation(&identity);
+    expression expr2 = evaluation(&identity);
 
     cond.branches.push_back({std::move(expr1), int32_t{13}});
     cond.branches.push_back({std::move(expr2), int32_t{37}});
+
+    evaluation& eval1 = get<evaluation>(cond.branches.at(0).check);
+    evaluation& eval2 = get<evaluation>(cond.branches.at(1).check);
 
     SUBCASE("when first condition evaluated to true")
     {

@@ -192,7 +192,7 @@ int main(int argc, char** argv)
 
     for (auto& eval : prog.evaluations)
     {
-        ant::runtime::value_variant result = execute(*eval);
+        ant::runtime::value_variant result = execute(eval);
         print(result);
     }
 

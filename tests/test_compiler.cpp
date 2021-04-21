@@ -97,7 +97,7 @@ TEST_CASE_FIXTURE(fixture, "compile structure with one field of defined type")
 TEST_CASE_FIXTURE(fixture, "compile evaluation of undefined function returns failure")
 {
     const ast::evaluation eval = {"undefined-function", {}};
-    compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    compiler_expect<runtime::evaluation> result = compile(env, scope, eval);
     REQUIRE(is_failure(result));
 }
 
@@ -106,11 +106,11 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of nullary function")
     runtime::function func;
     env.functions["defined-function"].push_back({function_meta{}, &func});
     const ast::evaluation eval = {"defined-function", {}};
-    compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    compiler_expect<runtime::evaluation> result = compile(env, scope, eval);
     REQUIRE(is_success(result));
     const auto& [value, type] = get_success(result);
-    CHECK(value->blueprint == &func);
-    CHECK(value->arguments.empty());
+    CHECK(value.blueprint == &func);
+    CHECK(value.arguments.empty());
 }
 
 TEST_CASE_FIXTURE(fixture,
@@ -124,7 +124,7 @@ TEST_CASE_FIXTURE(fixture,
     env.functions["defined-function"].push_back({meta, &func});
 
     const ast::evaluation eval = {"defined-function", {ast::literal<int64_t>{1337}}};
-    const compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    const compiler_expect<runtime::evaluation> result = compile(env, scope, eval);
 
     REQUIRE(is_failure(result));
 }
@@ -142,11 +142,11 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation of unary function with matching p
     env.functions["defined-function"].push_back({meta, &func});
 
     const ast::evaluation eval = {"defined-function", {ast::literal<int32_t>{1337}}};
-    const compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+    const compiler_expect<runtime::evaluation> result = compile(env, scope, eval);
     REQUIRE(is_success(result));
     const auto& [value, type] = get_success(result);
-    CHECK(value->blueprint == &func);
-    CHECK(value->arguments.size() == 1);
+    CHECK(value.blueprint == &func);
+    CHECK(value.arguments.size() == 1);
     CHECK(type == ast::name_of_v<ast::literal<int32_t>>);
 }
 
@@ -191,10 +191,10 @@ TEST_CASE_FIXTURE(fixture, "compile evaluation expression")
     const auto result = compile(env, scope, expr);
     REQUIRE(is_success(result));
     const auto& [expr_value, expr_type] = get_success(result);
-    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(expr_value));
-    const auto& compiled = get<std::unique_ptr<runtime::evaluation>>(expr_value);
-    CHECK(compiled->blueprint == &func);
-    CHECK(compiled->arguments.empty());
+    REQUIRE(holds<runtime::evaluation>(expr_value));
+    const auto& compiled = get<runtime::evaluation>(expr_value);
+    CHECK(compiled.blueprint == &func);
+    CHECK(compiled.arguments.empty());
     CHECK(expr_type == "return-type");
 }
 
@@ -326,13 +326,13 @@ TEST_CASE_FIXTURE(fixture, "compile unary function with valid evaluation express
     const auto result = compile(env, func);
     REQUIRE(is_success(result));
     const auto& [meta, compiled] = get_success(result);
-    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(compiled->value));
-    const auto& eval = get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    REQUIRE(holds<runtime::evaluation>(compiled->value));
+    const auto& eval = get<runtime::evaluation>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
-    REQUIRE(eval->blueprint == &i32);
-    REQUIRE(eval->arguments.size() == 1);
-    REQUIRE(holds<runtime::value_variant*>(eval->arguments.at(0)));
-    const auto* argument = get<runtime::value_variant*>(eval->arguments.at(0));
+    REQUIRE(eval.blueprint == &i32);
+    REQUIRE(eval.arguments.size() == 1);
+    REQUIRE(holds<runtime::value_variant*>(eval.arguments.at(0)));
+    const auto* argument = get<runtime::value_variant*>(eval.arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
     CHECK(meta.return_type == "i32");
     REQUIRE(meta.parameter_types.size() == 1);
@@ -604,13 +604,13 @@ TEST_CASE_FIXTURE(fixture, "compile recursive function")
     }
     REQUIRE(is_success(result));
     const auto& [meta, compiled] = get_success(result);
-    REQUIRE(holds<std::unique_ptr<runtime::evaluation>>(compiled->value));
-    const auto& eval = get<std::unique_ptr<runtime::evaluation>>(compiled->value);
+    REQUIRE(holds<runtime::evaluation>(compiled->value));
+    const auto& eval = get<runtime::evaluation>(compiled->value);
     REQUIRE(compiled->parameters.size() == 1);
-    REQUIRE(eval->blueprint == compiled.get());
-    REQUIRE(eval->arguments.size() == 1);
-    REQUIRE(holds<runtime::value_variant*>(eval->arguments.at(0)));
-    const auto* argument = get<runtime::value_variant*>(eval->arguments.at(0));
+    REQUIRE(eval.blueprint == compiled.get());
+    REQUIRE(eval.arguments.size() == 1);
+    REQUIRE(holds<runtime::value_variant*>(eval.arguments.at(0)));
+    const auto* argument = get<runtime::value_variant*>(eval.arguments.at(0));
     CHECK(argument == &compiled->parameters.at(0));
     CHECK(meta.return_type == "i32");
     REQUIRE(meta.parameter_types.size() == 1);

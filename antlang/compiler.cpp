@@ -97,7 +97,7 @@ compile(compiler_scope const& scope, ast::reference const& ref)
     return it->second;
 }
 
-compiler_expect<std::unique_ptr<runtime::evaluation>>
+compiler_expect<runtime::evaluation>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::evaluation const& eval)
@@ -142,13 +142,13 @@ compile(compiler_environment const& env,
     }
     auto& [return_type, func_ptr] = get_success(func_query);
 
-    auto result = std::make_unique<runtime::evaluation>(func_ptr);
+    auto result = runtime::evaluation(func_ptr);
     std::transform(std::move_iterator(arguments.begin()),
                    std::move_iterator(arguments.end()),
-                   result->arguments.begin(),
+                   result.arguments.begin(),
                    [](auto&& arg) { return std::move(arg.value); });
 
-    return compiler_result<std::unique_ptr<runtime::evaluation>>{
+    return compiler_result<runtime::evaluation>{
         std::move(result),
         return_type
     };
@@ -218,7 +218,7 @@ compile(compiler_environment const& env,
             };
         }
 
-        compiled_condition->branches.emplace_back(std::move(check_expr), std::move(value_expr));
+        compiled_condition->branches.push_back({std::move(check_expr), std::move(value_expr)});
     }
 
     auto fallback = compile(env, scope, cond.fallback);
@@ -284,7 +284,7 @@ struct expression_compiler
     compiler_expect<runtime::expression>
     operator()(ast::evaluation const& eval)
     {
-        compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, scope, eval);
+        compiler_expect<runtime::evaluation> result = compile(env, scope, eval);
         if (is_success(result))
         {
             auto& [value, type] = get_success(result);
@@ -492,7 +492,7 @@ struct statement_compiler
 
     compiler_status operator()(ast::evaluation const& eval)
     {
-        compiler_expect<std::unique_ptr<runtime::evaluation>> result = compile(env, {}, eval);
+        compiler_expect<runtime::evaluation> result = compile(env, {}, eval);
         if (is_success(result))
         {
             program.evaluations.push_back(std::move(get_success(result).value));

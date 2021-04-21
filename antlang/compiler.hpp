@@ -118,7 +118,7 @@ compiler_expect<runtime::value_variant*>
 compile(compiler_scope const& scope,
         ast::reference const& ref);
 
-compiler_expect<std::unique_ptr<runtime::evaluation>>
+compiler_expect<runtime::evaluation>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::evaluation const& eval);

@@ -116,6 +116,20 @@ struct remove_qualifiers
 template <typename T>
 using remove_qualifiers_t = typename remove_qualifiers<T>::type;
 
+template <typename Variant, typename T>
+decltype(auto) wrap(T&& x)
+{
+    using value_type = remove_qualifiers_t<T>;
+    if constexpr (is_recursive_v<value_type, Variant>)
+    {
+        return recursive_wrapper<value_type>(std::forward<T>(x));
+    }
+    else
+    {
+        return std::forward<T>(x);
+    }
+}
+
 template <typename... Ts>
 struct recursive_variant
 {
@@ -133,16 +147,12 @@ struct recursive_variant
 
     template <
         typename T,
-        typename =
-            std::enable_if_t<
-                !std::is_base_of_v<
-                    recursive_variant,
-                    remove_qualifiers_t<T>
-                 >
-            >
+        typename = std::enable_if_t<
+            !std::is_base_of_v<recursive_variant, remove_qualifiers_t<T>>
+        >
     >
     constexpr recursive_variant(T&& x) noexcept(std::is_nothrow_constructible_v<storage_type, T>)
-        : storage(std::forward<T>(x))
+        : storage(wrap<recursive_variant>(std::forward<T>(x)))
     {
     }
 

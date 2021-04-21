@@ -66,9 +66,9 @@ struct expression_executor
         return op->execute();
     }
 
-    value_variant operator()(std::unique_ptr<evaluation>& eval) const
+    value_variant operator()(evaluation& eval) const
     {
-        return execute(*eval);
+        return execute(eval);
     }
 
     value_variant operator()(std::unique_ptr<construction>& ctor) const

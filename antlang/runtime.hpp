@@ -45,7 +45,7 @@ using expression_base =
         value_variant,
         value_variant*,
         std::unique_ptr<operation>,
-        std::unique_ptr<evaluation>,
+        recursive_wrapper<evaluation>,
         std::unique_ptr<construction>,
         std::unique_ptr<condition>
     >;
@@ -147,16 +147,22 @@ struct construction
     }
 };
 
+struct branch
+{
+    expression check;
+    expression value;
+};
+
 struct condition
 {
-    std::vector<std::pair<expression, expression>> branches;
+    std::vector<branch> branches;
     expression fallback;
 };
 
 struct program
 {
     std::vector<std::unique_ptr<function>> functions;
-    std::vector<std::unique_ptr<evaluation>> evaluations;
+    std::vector<evaluation> evaluations;
 };
 
 value_variant execute(function& func);
