@@ -154,7 +154,7 @@ compile(compiler_environment const& env,
     };
 }
 
-compiler_expect<std::unique_ptr<runtime::condition>>
+compiler_expect<runtime::condition>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::condition const& cond)
@@ -164,8 +164,8 @@ compile(compiler_environment const& env,
         return compiler_failure{"Condition must have at least 1 branch", cond.context};
     }
 
-    auto compiled_condition = std::make_unique<runtime::condition>();
-    compiled_condition->branches.reserve(cond.branches.size());
+    runtime::condition compiled_condition;
+    compiled_condition.branches.reserve(cond.branches.size());
 
     auto compile_branch = [&env, &scope](auto const& branch)
     {
@@ -218,7 +218,7 @@ compile(compiler_environment const& env,
             };
         }
 
-        compiled_condition->branches.push_back({std::move(check_expr), std::move(value_expr)});
+        compiled_condition.branches.push_back({std::move(check_expr), std::move(value_expr)});
     }
 
     auto fallback = compile(env, scope, cond.fallback);
@@ -238,9 +238,9 @@ compile(compiler_environment const& env,
         };
     }
 
-    compiled_condition->fallback = std::move(fallback_expr);
+    compiled_condition.fallback = std::move(fallback_expr);
 
-    return compiler_result<std::unique_ptr<runtime::condition>>{
+    return compiler_result<runtime::condition>{
         std::move(compiled_condition),
         result_type
     };
@@ -299,7 +299,7 @@ struct expression_compiler
     compiler_expect<runtime::expression>
     operator()(ast::condition const& cond)
     {
-        compiler_expect<std::unique_ptr<runtime::condition>> result = compile(env, scope, cond);
+        compiler_expect<runtime::condition> result = compile(env, scope, cond);
         if (is_success(result))
         {
             auto& [value, type] = get_success(result);
@@ -403,7 +403,7 @@ make_constructor(runtime::structure const& prototype)
     auto constructor = std::make_unique<runtime::function>();
     constructor->parameters = prototype.fields;
     // bootstrap the type system!
-    constructor->value = std::make_unique<runtime::construction>(constructor.get());
+    constructor->value = runtime::construction(constructor.get());
     return std::move(constructor);
 }
 

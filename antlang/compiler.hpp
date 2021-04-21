@@ -123,7 +123,7 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::evaluation const& eval);
 
-compiler_expect<std::unique_ptr<runtime::condition>>
+compiler_expect<runtime::condition>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::condition const& cond);

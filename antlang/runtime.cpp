@@ -71,14 +71,14 @@ struct expression_executor
         return execute(eval);
     }
 
-    value_variant operator()(std::unique_ptr<construction>& ctor) const
+    value_variant operator()(construction& ctor) const
     {
-        return execute(*ctor);
+        return execute(ctor);
     }
 
-    value_variant operator()(std::unique_ptr<condition>& cond) const
+    value_variant operator()(condition& cond) const
     {
-        return execute(*cond);
+        return execute(cond);
     }
 };
 

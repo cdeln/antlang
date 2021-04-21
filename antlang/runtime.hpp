@@ -35,19 +35,30 @@ struct value_variant : public value_variant_base
     using value_variant_base::value_variant_base;
 };
 
-struct operation;
+struct function;
+
+struct construction
+{
+    function* prototype;
+
+    construction(function* prototype)
+        : prototype{prototype}
+    {
+    }
+};
+
 struct evaluation;
-struct construction;
 struct condition;
+struct operation;
 
 using expression_base =
     recursive_variant<
         value_variant,
         value_variant*,
-        std::unique_ptr<operation>,
+        construction,
         recursive_wrapper<evaluation>,
-        std::unique_ptr<construction>,
-        std::unique_ptr<condition>
+        recursive_wrapper<condition>,
+        std::unique_ptr<operation>
     >;
 
 struct expression : public expression_base
@@ -59,6 +70,30 @@ struct function
 {
     std::vector<value_variant> parameters;
     expression value;
+};
+
+struct evaluation
+{
+    function* blueprint;
+    std::vector<expression> arguments;
+
+    evaluation(function* func)
+        : blueprint{func}
+        , arguments(func->parameters.size())
+    {
+    }
+};
+
+struct branch
+{
+    expression check;
+    expression value;
+};
+
+struct condition
+{
+    std::vector<branch> branches;
+    expression fallback;
 };
 
 struct operation
@@ -124,40 +159,6 @@ using std::greater;
 using std::less;
 using std::greater_equal;
 using std::less_equal;
-
-struct evaluation
-{
-    function* blueprint;
-    std::vector<expression> arguments;
-
-    evaluation(function* func)
-        : blueprint{func}
-        , arguments(func->parameters.size())
-    {
-    }
-};
-
-struct construction
-{
-    function* prototype;
-
-    construction(function* prototype)
-        : prototype{prototype}
-    {
-    }
-};
-
-struct branch
-{
-    expression check;
-    expression value;
-};
-
-struct condition
-{
-    std::vector<branch> branches;
-    expression fallback;
-};
 
 struct program
 {
