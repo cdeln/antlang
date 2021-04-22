@@ -61,8 +61,6 @@ struct operation
     binary_operator impl;
 
     operation(function* blueprint, binary_operator impl);
-
-    value_variant execute();
 };
 
 template <template <typename> class Operator, typename Type>
@@ -162,6 +160,8 @@ struct program
 value_variant execute(function& func);
 
 value_variant execute(evaluation& eval);
+
+value_variant execute(operation& op);
 
 structure execute(construction& ctor);
 

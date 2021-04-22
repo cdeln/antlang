@@ -14,11 +14,11 @@ operation::operation(function* blueprint, binary_operator impl)
     }
 }
 
-value_variant operation::execute()
+value_variant execute(operation& op)
 {
-    const value_variant& arg0 = blueprint->parameters.at(0);
-    const value_variant& arg1 = blueprint->parameters.at(1);
-    return this->impl(arg0, arg1);
+    const value_variant& arg0 = op.blueprint->parameters.at(0);
+    const value_variant& arg1 = op.blueprint->parameters.at(1);
+    return op.impl(arg0, arg1);
 }
 
 value_variant execute(function& func)
@@ -70,7 +70,7 @@ struct expression_executor
 
     value_variant operator()(operation& op) const
     {
-        return op.execute();
+        return execute(op);
     }
 
     value_variant operator()(evaluation& eval) const

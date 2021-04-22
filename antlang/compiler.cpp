@@ -1,10 +1,5 @@
 #include "compiler.hpp"
 
-#include "formatting.hpp"
-
-#include <cassert>
-#include <sstream>
-
 namespace ant
 {
 
