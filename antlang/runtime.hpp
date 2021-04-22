@@ -47,18 +47,46 @@ struct construction
     }
 };
 
+using binary_operator =
+    std::function<
+        value_variant(
+            value_variant const&,
+            value_variant const&
+        )
+    >;
+
+struct operation
+{
+    function* blueprint;
+    binary_operator impl;
+
+    operation(function* blueprint, binary_operator impl);
+
+    value_variant execute();
+};
+
+template <template <typename> class Operator, typename Type>
+operation make_binary_operator(function* blueprint)
+{
+    using variant = runtime::value_variant;
+    auto impl = [](variant const& lhs, variant const& rhs) -> variant
+    {
+        return Operator<Type>{}(get<Type>(lhs), get<Type>(rhs));
+    };
+    return operation(blueprint, impl);
+}
+
 struct evaluation;
 struct condition;
-struct operation;
 
 using expression_base =
     recursive_variant<
         value_variant,
         value_variant*,
         construction,
+        operation,
         recursive_wrapper<evaluation>,
-        recursive_wrapper<condition>,
-        std::unique_ptr<operation>
+        recursive_wrapper<condition>
     >;
 
 struct expression : public expression_base
@@ -94,41 +122,6 @@ struct condition
 {
     std::vector<branch> branches;
     expression fallback;
-};
-
-struct operation
-{
-    function* blueprint;
-
-    operation(function* blueprint);
-
-    virtual ~operation() = default;
-
-    virtual value_variant execute() = 0;
-};
-
-template <template <typename> class Operator, typename Type>
-struct fundamental_operation final : public operation
-{
-    fundamental_operation(function* blueprint)
-        : operation(blueprint)
-    {
-        for (size_t i = 0; i < 2; ++i)
-        {
-            if (!holds<Type>(blueprint->parameters.at(i)))
-            {
-                throw std::invalid_argument("operation blueprint invalid parameter type");
-            }
-        }
-    }
-
-    value_variant execute()
-    {
-        Operator<Type> op;
-        Type const& arg0 = get<Type>(blueprint->parameters.at(0));
-        Type const& arg1 = get<Type>(blueprint->parameters.at(1));
-        return op(arg0, arg1);
-    }
 };
 
 struct arithmetic_error : public std::runtime_error

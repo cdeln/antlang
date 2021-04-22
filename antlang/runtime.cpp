@@ -5,13 +5,20 @@ namespace ant
 namespace runtime
 {
 
-operation::operation(function* blueprint)
-    : blueprint{blueprint}
+operation::operation(function* blueprint, binary_operator impl)
+    : blueprint{blueprint}, impl{impl}
 {
     if (blueprint->parameters.size() != 2)
     {
         throw std::invalid_argument("operation blueprint invalid parameter size");
     }
+}
+
+value_variant operation::execute()
+{
+    const value_variant& arg0 = blueprint->parameters.at(0);
+    const value_variant& arg1 = blueprint->parameters.at(1);
+    return this->impl(arg0, arg1);
 }
 
 value_variant execute(function& func)
@@ -61,9 +68,9 @@ struct expression_executor
         return *value;
     }
 
-    value_variant operator()(std::unique_ptr<operation>& op) const
+    value_variant operator()(operation& op) const
     {
-        return op->execute();
+        return op.execute();
     }
 
     value_variant operator()(evaluation& eval) const

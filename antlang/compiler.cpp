@@ -60,9 +60,7 @@ void add_fundamental_operation(
 
     auto op = std::make_unique<runtime::function>();
     op->parameters = {Type{}, Type{}};
-    std::unique_ptr<runtime::operation> value =
-        std::make_unique<runtime::fundamental_operation<Operator, Type>>(op.get());
-    op->value = std::move(value);
+    op->value = runtime::make_binary_operator<Operator, Type>(op.get());
 
     prog.functions.push_back(std::move(op));
 

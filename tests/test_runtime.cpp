@@ -178,11 +178,10 @@ TEST_CASE("execute plus operation works adds two integers")
 {
     function blueprint;
     blueprint.parameters = {int32_t{}, int32_t{}};
-    std::unique_ptr<operation> op =
-        std::make_unique<fundamental_operation<plus, int32_t>>(&blueprint);
+    operation op = make_binary_operator<plus, int32_t>(&blueprint);
     blueprint.parameters.at(0) = 13;
     blueprint.parameters.at(1) = 37;
-    value_variant result = op->execute();
+    value_variant result = op.execute();
     REQUIRE(holds<int32_t>(result));
     CHECK(get<int32_t>(result) == (13 + 37));
 }
@@ -191,11 +190,10 @@ TEST_CASE("execute minus operation subtracts two integers")
 {
     function blueprint;
     blueprint.parameters = {int32_t{}, int32_t{}};
-    std::unique_ptr<operation> op =
-        std::make_unique<fundamental_operation<minus, int32_t>>(&blueprint);
+    operation op = make_binary_operator<minus, int32_t>(&blueprint);
     blueprint.parameters.at(0) = 13;
     blueprint.parameters.at(1) = 37;
-    value_variant result = op->execute();
+    value_variant result = op.execute();
     REQUIRE(holds<int32_t>(result));
     CHECK(get<int32_t>(result) == (13 - 37));
 }
@@ -204,11 +202,10 @@ TEST_CASE("execute multiplication operation multiplies two integers")
 {
     function blueprint;
     blueprint.parameters = {int32_t{}, int32_t{}};
-    std::unique_ptr<operation> op =
-        std::make_unique<fundamental_operation<multiplies, int32_t>>(&blueprint);
+    operation op = make_binary_operator<multiplies, int32_t>(&blueprint);
     blueprint.parameters.at(0) = 13;
     blueprint.parameters.at(1) = 37;
-    value_variant result = op->execute();
+    value_variant result = op.execute();
     REQUIRE(holds<int32_t>(result));
     CHECK(get<int32_t>(result) == (13 * 37));
 }
@@ -217,11 +214,10 @@ TEST_CASE("execute division operation divides two integers")
 {
     function blueprint;
     blueprint.parameters = {int32_t{}, int32_t{}};
-    std::unique_ptr<operation> op =
-        std::make_unique<fundamental_operation<divides, int32_t>>(&blueprint);
+    operation op = make_binary_operator<divides, int32_t>(&blueprint);
     blueprint.parameters.at(0) = 37;
     blueprint.parameters.at(1) = 13;
-    value_variant result = op->execute();
+    value_variant result = op.execute();
     REQUIRE(holds<int32_t>(result));
     CHECK(get<int32_t>(result) == (37 / 13));
 }
@@ -230,9 +226,8 @@ TEST_CASE("execute division operation with zero divisor throws exception")
 {
     function blueprint;
     blueprint.parameters = {int32_t{}, int32_t{}};
-    std::unique_ptr<operation> op =
-        std::make_unique<fundamental_operation<divides, int32_t>>(&blueprint);
+    operation op = make_binary_operator<divides, int32_t>(&blueprint);
     blueprint.parameters.at(0) = 37;
     blueprint.parameters.at(1) = 0;
-    REQUIRE_THROWS(op->execute());
+    REQUIRE_THROWS(op.execute());
 }
