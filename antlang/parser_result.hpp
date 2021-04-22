@@ -18,7 +18,7 @@ struct parser_success
 struct parser_failure
 {
     std::string message;
-    token_context context;
+    std::vector<token>::const_iterator position;
     std::vector<parser_failure> children;
 };
 

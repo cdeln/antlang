@@ -74,7 +74,7 @@ struct parser<ast_rule<Attribute>>
             message << "Failed to parse " << quote(ast::name_of_v<Attribute>);
             return parser_failure{
                 message.str(),
-                pos->context,
+                pos,
                 {std::move(get_failure(result))}
             };
         }

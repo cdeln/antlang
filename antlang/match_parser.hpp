@@ -34,7 +34,7 @@ struct parser<match<Value, Pattern>>
                 std::stringstream message;
                 message << "Value " << quote(value)
                         << " did not match the expected pattern " << quote(Pattern::value);
-                return parser_failure{message.str(), pos->context};
+                return parser_failure{message.str(), pos};
             }
         }
         else

@@ -77,7 +77,7 @@ struct parser<literal_rule<Literal, Token>>
             std::stringstream message;
             message << "Expected token " << quote(Token::name)
                     << ", got " << quote(token_name(pos->variant));
-            return parser_failure{message.str(), pos->context};
+            return parser_failure{message.str(), pos};
         }
         const auto alternative = get<Token>(pos->variant);
         static_assert(std::is_same_v<Token, boolean_literal_token> ||
@@ -95,7 +95,7 @@ struct parser<literal_rule<Literal, Token>>
             std::stringstream message;
             message << "Literal " << quote(alternative.value)
                     << " does not fit into target type " << quote(ast::name_of_v<Literal>);
-            return parser_failure{message.str(), pos->context};
+            return parser_failure{message.str(), pos};
         }
     }
 };

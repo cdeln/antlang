@@ -25,7 +25,7 @@ struct parser<alternative<Ts...>>
             std::vector<token>::const_iterator pos,
             std::vector<token>::const_iterator end) const
     {
-        return parser_failure{"Failed to parse alternative", pos->context};
+        return parser_failure{"Failed to parse alternative", pos};
     }
 
     template <size_t I, size_t... Is>
@@ -82,7 +82,7 @@ struct parser<alternative<Ts...>>
                 failure.children.rbegin(), failure.children.rend());
             return parser_failure{
                 message.str(),
-                pos->context,
+                pos,
                 std::move(failures)
             };
         }

@@ -7,7 +7,13 @@ using namespace ant;
 
 TEST_CASE("can parse alternative expression")
 {
-    const auto parser = make_parser<alternative<left_parenthesis_token, identifier_token>>();
+    const auto parser =
+        make_parser<
+            alternative<
+                left_parenthesis_token,
+                identifier_token
+            >
+        >();
 
     SUBCASE("when expression is left parenthesis")
     {
@@ -31,9 +37,21 @@ TEST_CASE("can parse alternative expression")
     }
 }
 
-TEST_CASE("alternative parser returns failure on non-existing alternative")
+TEST_CASE("alternative parser with prefix free alternatives returns failure "
+          "with iterator to position of first failing token")
 {
-    const auto parser = make_parser<alternative<left_parenthesis_token, identifier_token>>();
-    const std::vector<token> tokens = {{right_parenthesis_token{}}};
-    CHECK(is_failure(parser.parse(tokens.cbegin(), tokens.cend())));
+    const auto parser =
+        make_parser<
+            alternative<
+                left_parenthesis_token,
+                identifier_token
+            >
+        >();
+    const std::vector<token> tokens = {
+        {right_parenthesis_token{}}
+    };
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(is_failure(result));
+    const auto& failure = get_failure(result);
+    CHECK(failure.position == tokens.cbegin());
 }

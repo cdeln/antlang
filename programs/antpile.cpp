@@ -60,10 +60,10 @@ struct parser_failure_handler : failure_handler
 
     void handle(ant::parser_failure const& failure)
     {
-        std::cout << file_name << ":" << failure.context.line << ": " << failure.message;
+        std::cout << file_name << ":" << failure.position->context.line << ": " << failure.message;
         if (failure.children.empty())
         {
-            show_context_info(failure.context);
+            show_context_info(failure.position->context);
         }
         std::cout << '\n';
         for (auto const& sub_failure : failure.children)

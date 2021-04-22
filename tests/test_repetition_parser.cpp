@@ -80,11 +80,39 @@ TEST_CASE("repetition parser parses multiple attributed tokens")
 
 TEST_CASE("repetition parser returns failure if terminal pattern is not found before end of input")
 {
+    const auto parser =
+        make_parser<
+            repetition<
+                left_parenthesis_token,
+                right_parenthesis_token
+            >
+        >();
     const std::vector<token> tokens =
     {
         {left_parenthesis_token{}}
     };
-    const auto parser = make_parser<repetition<left_parenthesis_token, right_parenthesis_token>>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
     REQUIRE(is_failure(result));
+}
+
+TEST_CASE("repetition parser returns failure with iterator to position of failing token")
+{
+    const auto parser =
+        make_parser<
+            repetition<
+                identifier_token,
+                right_parenthesis_token
+            >
+        >();
+    const std::vector<token> tokens = {
+        {identifier_token{"a"}},
+        {identifier_token{"b"}},
+        {identifier_token{"c"}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_failure(result));
+    const auto& failure = get_failure(result);
+    CHECK(std::distance(tokens.cbegin(), failure.position) == 3);
 }

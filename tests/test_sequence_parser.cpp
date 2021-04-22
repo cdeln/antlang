@@ -116,3 +116,24 @@ TEST_CASE("sequence parser parses a sequence of mixed non-attributed and attribu
     CHECK(std::get<0>(values) == "test");
     CHECK(std::get<1>(values) == "1337");
 }
+
+TEST_CASE("sequence parser returns failure with iterator to position of failing token")
+{
+    const auto parser =
+        make_parser<
+            sequence<
+                left_parenthesis_token,
+                identifier_token,
+                right_parenthesis_token
+            >
+        >();
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {integer_literal_token{"1337"}},
+        {right_parenthesis_token{}}
+    };
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_failure(result));
+    const auto& failure = get_failure(result);
+    CHECK(std::distance(tokens.cbegin(), failure.position) == 1);
+}
