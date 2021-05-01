@@ -137,10 +137,22 @@ struct program
     std::vector<statement> statements;
 };
 
+template <typename T, typename = void>
+struct has_name : std::false_type {};
+
 template <typename T>
+struct has_name<T, std::void_t<decltype(T::name)>> : std::true_type {};
+
+template <typename T, bool HasName = has_name<T>::value>
 struct name_of
 {
     static constexpr auto const value = T::name;
+};
+
+template <typename T>
+struct name_of<T, false>
+{
+    static constexpr auto const value = "anonymous";
 };
 
 template <> struct name_of<boolean>  { static constexpr auto const value = "bool"; };

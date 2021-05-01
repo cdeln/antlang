@@ -168,3 +168,31 @@ TEST_CASE("longest common prefix between sequence alternative and sequence "
     CHECK(longest_common_prefix_for<sequence<B, A>, alternative_rule>() == 1);
     CHECK(longest_common_prefix_for<sequence<C, B>, alternative_rule>() == 0);
 }
+
+TEST_CASE("longest common prefix between two alternatives works as expected")
+{
+    using alternative_rule =
+        alternative<
+            sequence<A,B>,
+            sequence<A,C>,
+            sequence<B,C>,
+            sequence<A,B,C>
+        >;
+    CHECK(alternative_longest_common_prefix(alternative_rule()) == 2);
+}
+
+TEST_CASE("longest common prefix of two real rules works as expected")
+{
+    using rule =
+        alternative<
+            sequence<
+                left_parenthesis_token,
+                identifier_token
+            >,
+            sequence<
+                left_parenthesis_token,
+                integer_literal_token
+            >
+        >;
+    CHECK(alternative_longest_common_prefix(rule()) == 1);
+}

@@ -3,6 +3,7 @@
 #include "alternative.hpp"
 #include "exceptions.hpp"
 #include "formatting.hpp"
+#include "longest_common_prefix.hpp"
 #include "parser.hpp"
 #include "type_filters.hpp"
 
@@ -18,6 +19,8 @@ struct parser<alternative<Ts...>>
 {
     using attribute_type = attribute_of_t<alternative<Ts...>>;
     using result_type = parser_result<attribute_type>;
+
+    constexpr static ptrdiff_t lcp = alternative_longest_common_prefix(alternative<Ts...>());
 
     result_type
     recursive_sub_parse(
@@ -44,6 +47,11 @@ struct parser<alternative<Ts...>>
         }
         else
         {
+            auto& failure = get_failure(result);
+            if (std::distance(pos, failure.position) > lcp)
+            {
+                return std::move(failure);
+            }
             auto sub_result = recursive_sub_parse(std::index_sequence<Is...>(), pos, end);
             if (is_success(sub_result))
             {
@@ -52,7 +60,7 @@ struct parser<alternative<Ts...>>
             else
             {
                 auto& sub_failure = get_failure(sub_result);
-                sub_failure.children.push_back(std::move(get_failure(result)));
+                sub_failure.children.push_back(std::move(failure));
                 return std::move(sub_failure);
             }
         }
@@ -66,6 +74,10 @@ struct parser<alternative<Ts...>>
         if (is_failure(result))
         {
             auto& failure = get_failure(result);
+            if (std::distance(pos, failure.position) > lcp)
+            {
+                return std::move(failure);
+            }
             std::stringstream message;
             message << "Exhausted all alternatives, tried parsing";
             std::vector<std::string> alternative_names = {ast::name_of_v<Ts>...};

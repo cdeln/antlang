@@ -159,4 +159,31 @@ longest_common_prefix(
                     longest_common_prefix(next_iterator(i1), i2));
 }
 
+template <typename T>
+constexpr T max(T x)
+{
+    return x;
+}
+
+template <typename T, typename... Ts>
+constexpr T max(T first, T second, Ts... rest)
+{
+    return max(std::max(first, second), rest...);
+}
+
+template <typename... Ts>
+constexpr size_t
+alternative_longest_common_prefix(alternative<Ts...>)
+{
+    return max(
+        longest_common_prefix_for<
+            apply_type_t<
+                alternative,
+                remove_t<Ts, std::tuple<Ts...>>
+            >,
+            Ts
+        >()...
+    );
+}
+
 } // namespace ant
