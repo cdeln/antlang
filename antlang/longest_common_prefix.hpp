@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fundamental_types.hpp"
+#include "alternative.hpp"
 #include "repetition.hpp"
 #include "sequence.hpp"
 #include "type_filters.hpp"
@@ -32,6 +32,9 @@ struct is_terminal<sequence<Ts...>> : std::integral_constant<bool, false> {};
 
 template <typename T, typename E>
 struct is_terminal<repetition<T, E>> : std::integral_constant<bool, false> {};
+
+template <typename... Ts>
+struct is_terminal<alternative<Ts...>> : std::integral_constant<bool, false> {};
 
 template <typename T>
 constexpr bool is_terminal_v = is_terminal<T>::value;
@@ -128,6 +131,32 @@ longest_common_prefix(
         rule_iterator<0, repetition<T, E2>, Q>)
 {
     return unbounded_prefix_length;
+}
+
+// alternative
+
+template <size_t I, typename... Ts, typename P>
+constexpr auto next_iterator(rule_iterator<I, alternative<Ts...>, P>)
+{
+    if constexpr ((I+1) == sizeof...(Ts))
+    {
+        return P();
+    }
+    else
+    {
+        return rule_iterator<I+1, alternative<Ts...>, P>();
+    }
+}
+
+template <size_t I, typename... Ts, typename P, size_t J, typename R, typename Q>
+constexpr size_t
+longest_common_prefix(
+        rule_iterator<I, alternative<Ts...>, P> i1,
+        rule_iterator<J, R, Q> i2)
+{
+    using child_rule = type_at_t<I, Ts...>;
+    return std::max(longest_common_prefix(make_rule_iterator<child_rule, P>(), i2),
+                    longest_common_prefix(next_iterator(i1), i2));
 }
 
 } // namespace ant

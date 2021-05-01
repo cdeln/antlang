@@ -123,3 +123,48 @@ TEST_CASE("longest common prefix between repetition and repetition with common p
     CHECK(longest_common_prefix_for<rule_1, rule_2>() == unbounded_prefix_length);
     CHECK(longest_common_prefix_for<rule_2, rule_1>() == unbounded_prefix_length);
 }
+
+TEST_CASE("longest common prefix between terminal alternative and non-prefix terminal is 0")
+{
+    using alternative_rule = alternative<A, B>;
+    CHECK(longest_common_prefix_for<alternative_rule, C>() == 0);
+    CHECK(longest_common_prefix_for<C, alternative_rule>() == 0);
+}
+
+TEST_CASE("longest common prefix between terminal alternative and present terminal is 1")
+{
+    using alternative_rule = alternative<A, B>;
+    CHECK(longest_common_prefix_for<alternative_rule, A>() == 1);
+    CHECK(longest_common_prefix_for<A, alternative_rule>() == 1);
+    CHECK(longest_common_prefix_for<alternative_rule, B>() == 1);
+    CHECK(longest_common_prefix_for<B, alternative_rule>() == 1);
+}
+
+TEST_CASE("longest common prefix between terminal alternative "
+          "and sequence without common prefix is 0")
+{
+    CHECK(longest_common_prefix_for<alternative<A, B>, sequence<C>>() == 0);
+    CHECK(longest_common_prefix_for<sequence<C>, alternative<A, B>>() == 0);
+}
+
+TEST_CASE("longest common prefix between terminal alternative and sequence with common prefix is 1")
+{
+    CHECK(longest_common_prefix_for<alternative<A, B>, sequence<A, C>>() == 1);
+    CHECK(longest_common_prefix_for<sequence<A, C>, alternative<A, B>>() == 1);
+}
+
+TEST_CASE("longest common prefix between sequence alternative and sequence "
+          "with common prefix is length of sequence")
+{
+    using alternative_rule = alternative<sequence<A, B>, sequence<B, C>>;
+    CHECK(longest_common_prefix_for<alternative_rule, sequence<A, B>>() == 2);
+    CHECK(longest_common_prefix_for<alternative_rule, sequence<B, C>>() == 2);
+    CHECK(longest_common_prefix_for<alternative_rule, sequence<A, C>>() == 1);
+    CHECK(longest_common_prefix_for<alternative_rule, sequence<B, A>>() == 1);
+    CHECK(longest_common_prefix_for<alternative_rule, sequence<C, B>>() == 0);
+    CHECK(longest_common_prefix_for<sequence<A, B>, alternative_rule>() == 2);
+    CHECK(longest_common_prefix_for<sequence<B, C>, alternative_rule>() == 2);
+    CHECK(longest_common_prefix_for<sequence<A, C>, alternative_rule>() == 1);
+    CHECK(longest_common_prefix_for<sequence<B, A>, alternative_rule>() == 1);
+    CHECK(longest_common_prefix_for<sequence<C, B>, alternative_rule>() == 0);
+}
