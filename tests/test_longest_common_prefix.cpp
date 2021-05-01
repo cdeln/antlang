@@ -17,6 +17,10 @@ template <> struct rule_of<A> { using type = A; };
 template <> struct rule_of<B> { using type = B; };
 template <> struct rule_of<C> { using type = C; };
 
+template <> struct attribute_of<A> { using type = none; };
+template <> struct attribute_of<B> { using type = none; };
+template <> struct attribute_of<C> { using type = none; };
+
 };
 
 TEST_CASE("longest common prefix between two non-equal terminals is 0")
@@ -33,16 +37,16 @@ TEST_CASE("longest common prefix between two equal terminals is 1")
 
 TEST_CASE("longest common prefix between sequence and non-prefix terminal is 0")
 {
-    using sequence_type = sequence<A, B>;
-    CHECK(longest_common_prefix_for<sequence_type, B>() == 0);
-    CHECK(longest_common_prefix_for<B, sequence_type>() == 0);
+    using sequence_rule = sequence<A, B>;
+    CHECK(longest_common_prefix_for<sequence_rule, B>() == 0);
+    CHECK(longest_common_prefix_for<B, sequence_rule>() == 0);
 }
 
 TEST_CASE("longest common prefix between sequence and terminal prefix is 1")
 {
-    using sequence_type = sequence<A, B>;
-    CHECK(longest_common_prefix_for<sequence_type, A>() == 1);
-    CHECK(longest_common_prefix_for<A, sequence_type>() == 1);
+    using sequence_rule = sequence<A, B>;
+    CHECK(longest_common_prefix_for<sequence_rule, A>() == 1);
+    CHECK(longest_common_prefix_for<A, sequence_rule>() == 1);
 }
 
 TEST_CASE("longest common prefix between two sequences with terminals")
@@ -56,10 +60,66 @@ TEST_CASE("longest common prefix between two sequences with terminals")
 
 TEST_CASE("longest common prefix between a sequence and a nested sequence")
 {
-    using sequence_type = sequence<A, B, C>;
-    using nested_type = sequence<sequence_type, sequence_type>;
-    CHECK(longest_common_prefix_for<sequence_type, sequence_type>() == 3);
-    CHECK(longest_common_prefix_for<sequence_type, nested_type>()   == 3);
-    CHECK(longest_common_prefix_for<nested_type,   sequence_type>() == 3);
-    CHECK(longest_common_prefix_for<nested_type,   nested_type>()   == 6);
+    using sequence_rule = sequence<A, B, C>;
+    using nested_rule = sequence<sequence_rule, sequence_rule>;
+    CHECK(longest_common_prefix_for<sequence_rule, sequence_rule>() == 3);
+    CHECK(longest_common_prefix_for<sequence_rule, nested_rule>()   == 3);
+    CHECK(longest_common_prefix_for<nested_rule,   sequence_rule>() == 3);
+    CHECK(longest_common_prefix_for<nested_rule,   nested_rule>()   == 6);
+}
+
+TEST_CASE("longest common prefix between repetition and non-prefix terminal is 0")
+{
+    using repetition_rule = repetition<A, B>;
+    CHECK(longest_common_prefix_for<repetition_rule, B>() == 0);
+    CHECK(longest_common_prefix_for<B, repetition_rule>() == 0);
+}
+
+TEST_CASE("longest common prefix between repetition and terminal prefix is 1")
+{
+    using repetition_rule = repetition<A, B>;
+    CHECK(longest_common_prefix_for<repetition_rule, A>() == 1);
+    CHECK(longest_common_prefix_for<A, repetition_rule>() == 1);
+}
+
+TEST_CASE("longest common prefix between repetition and sequence without common prefix is 0")
+{
+    using repetition_rule = repetition<A, B>;
+    using sequence_rule   = sequence<B, C>;
+    CHECK(longest_common_prefix_for<repetition_rule, sequence_rule>() == 0);
+    CHECK(longest_common_prefix_for<sequence_rule, repetition_rule>() == 0);
+}
+
+TEST_CASE("longest common prefix between repetition and sequence with common prefix "
+          "excluding end of repetition rule is length of common prefix")
+{
+    using repetition_rule = repetition<A, B>;
+    using sequence_rule   = sequence<A, A, A, C>;
+    CHECK(longest_common_prefix_for<repetition_rule, sequence_rule>() == 3);
+    CHECK(longest_common_prefix_for<sequence_rule, repetition_rule>() == 3);
+}
+
+TEST_CASE("longest common prefix between repetition and sequence with common prefix "
+          "including end of repetition rule is length of common prefix")
+{
+    using repetition_rule = repetition<A, B>;
+    using sequence_rule   = sequence<A, A, A, B>;
+    CHECK(longest_common_prefix_for<repetition_rule, sequence_rule>() == 4);
+    CHECK(longest_common_prefix_for<sequence_rule, repetition_rule>() == 4);
+}
+
+TEST_CASE("longest common prefix between repetition and repetition without common prefix is 0")
+{
+    using rule_1 = repetition<A, B>;
+    using rule_2 = repetition<B, C>;
+    CHECK(longest_common_prefix_for<rule_1, rule_2>() == 0);
+    CHECK(longest_common_prefix_for<rule_2, rule_1>() == 0);
+}
+
+TEST_CASE("longest common prefix between repetition and repetition with common prefix is unbounded")
+{
+    using rule_1 = repetition<A, B>;
+    using rule_2 = repetition<A, C>;
+    CHECK(longest_common_prefix_for<rule_1, rule_2>() == unbounded_prefix_length);
+    CHECK(longest_common_prefix_for<rule_2, rule_1>() == unbounded_prefix_length);
 }
