@@ -1,8 +1,10 @@
 #include <doctest/doctest.h>
 
 #include "longest_common_prefix.hpp"
+
 #include "tokens.hpp"
 #include "token_rules.hpp"
+#include "ast_rules.hpp"
 
 using namespace ant;
 
@@ -193,6 +195,27 @@ TEST_CASE("longest common prefix of two real rules works as expected")
                 left_parenthesis_token,
                 integer_literal_token
             >
+        >;
+    CHECK(alternative_longest_common_prefix(rule()) == 1);
+}
+
+TEST_CASE("longest common prefix between ast element and sequence")
+{
+    using sequence_rule =
+        sequence<
+            left_parenthesis_token,
+            identifier_token,
+            right_parenthesis_token
+        >;
+    CHECK(longest_common_prefix_for<ast::function, sequence_rule>() == 1);
+}
+
+TEST_CASE("alternative longest common prefix of two non-pure (AST) rules works as expected")
+{
+    using rule =
+        alternative<
+            ast::function,
+            ast::structure
         >;
     CHECK(alternative_longest_common_prefix(rule()) == 1);
 }

@@ -3,6 +3,7 @@
 #include "alternative.hpp"
 #include "repetition.hpp"
 #include "sequence.hpp"
+#include "ast_rules.hpp"
 #include "type_filters.hpp"
 
 namespace ant
@@ -14,6 +15,17 @@ struct rule_iterator {};
 struct rule_iterator_end_tag;
 
 using rule_iterator_end = rule_iterator<0, void, rule_iterator_end_tag>;
+
+template <size_t I, typename T, typename P>
+constexpr bool is_end(rule_iterator<I, T, P>)
+{
+    return false;
+}
+
+constexpr bool is_end(rule_iterator_end)
+{
+    return true;
+}
 
 template <typename Rule, typename ParentIterator = rule_iterator_end>
 constexpr auto make_rule_iterator() -> rule_iterator<0, Rule, ParentIterator> { return {}; };
@@ -37,6 +49,9 @@ template <typename... Ts>
 struct is_terminal<alternative<Ts...>> : std::integral_constant<bool, false> {};
 
 template <typename T>
+struct is_terminal<ast_rule<T>> : std::integral_constant<bool, false> {};
+
+template <typename T>
 constexpr bool is_terminal_v = is_terminal<T>::value;
 
 constexpr size_t unbounded_prefix_length = std::numeric_limits<size_t>::max();
@@ -45,36 +60,46 @@ constexpr size_t unbounded_prefix_length = std::numeric_limits<size_t>::max();
 template <size_t I, typename T, typename P, size_t J, typename U, typename Q>
 constexpr size_t
 longest_common_prefix(
-        rule_iterator<I, T, P>,
-        rule_iterator<J, U, Q>)
+        rule_iterator<I, T, P> i1,
+        rule_iterator<J, U, Q> i2)
 {
-    static_assert(is_terminal_v<T>);
-    if constexpr (!is_terminal_v<U>)
+    if constexpr (is_end(i1) || is_end(i2))
     {
-        return longest_common_prefix(rule_iterator<J, U, Q>(), rule_iterator<I, T, P>());
-    }
-    else if constexpr (std::is_same_v<T, U>)
-    {
-        if constexpr (std::is_same_v<P, rule_iterator_end> || std::is_same_v<Q, rule_iterator_end>)
-        {
-            return 1;
-        }
-        else
-        {
-            return 1 + longest_common_prefix(P(), Q());
-        }
+        return 0;
     }
     else
     {
-        return 0;
+        using R1 = rule_of_t<T>;
+        using R2 = rule_of_t<U>;
+        static_assert(is_terminal_v<R1>);
+        if constexpr (!is_terminal_v<R2>)
+        {
+            return longest_common_prefix(rule_iterator<J, R2, Q>(), rule_iterator<I, R1, P>());
+        }
+        else if constexpr (std::is_same_v<R1, R2>)
+        {
+            if constexpr (is_end(P()) || is_end(Q()))
+            {
+                return 1;
+            }
+            else
+            {
+                return 1 + longest_common_prefix(P(), Q());
+            }
+        }
+        else
+        {
+            return 0;
+        }
     }
 }
 
 // helper method for getting the lcp for two rules (non-iterators)
-template <typename R1, typename R2>
+template <typename T1, typename T2>
 constexpr size_t longest_common_prefix_for()
 {
-    return longest_common_prefix(make_rule_iterator<R1>(), make_rule_iterator<R2>());
+    return longest_common_prefix(make_rule_iterator<rule_of_t<T1>>(),
+                                 make_rule_iterator<rule_of_t<T2>>());
 }
 
 // sequence
@@ -98,7 +123,7 @@ longest_common_prefix(
         rule_iterator<I, sequence<Ts...>, P> i1,
         rule_iterator<J, R, Q> i2)
 {
-    using child_rule = type_at_t<I, Ts...>;
+    using child_rule = rule_of_t<type_at_t<I, Ts...>>;
     return longest_common_prefix(make_rule_iterator<child_rule>(next_iterator(i1)), i2);
 }
 
@@ -111,7 +136,7 @@ longest_common_prefix(
         rule_iterator<J, R, Q> i2)
 {
     constexpr auto next = rule_iterator<1, repetition<T, E>, P>();
-    return longest_common_prefix(make_rule_iterator<T>(next), i2);
+    return longest_common_prefix(make_rule_iterator<rule_of_t<T>>(next), i2);
 }
 
 template <typename T, typename E, typename P, size_t J, typename R, typename Q>
@@ -120,8 +145,8 @@ longest_common_prefix(
         rule_iterator<1, repetition<T, E>, P> i1,
         rule_iterator<J, R, Q> i2)
 {
-    return std::max(longest_common_prefix(make_rule_iterator<T>(i1),  i2),
-                    longest_common_prefix(make_rule_iterator<E, P>(), i2));
+    return std::max(longest_common_prefix(make_rule_iterator<rule_of_t<T>>(i1),  i2),
+                    longest_common_prefix(make_rule_iterator<rule_of_t<E>, P>(), i2));
 }
 
 template <typename T, typename E1, typename P, typename E2, typename Q>
@@ -154,7 +179,7 @@ longest_common_prefix(
         rule_iterator<I, alternative<Ts...>, P> i1,
         rule_iterator<J, R, Q> i2)
 {
-    using child_rule = type_at_t<I, Ts...>;
+    using child_rule = rule_of_t<type_at_t<I, Ts...>>;
     return std::max(longest_common_prefix(make_rule_iterator<child_rule, P>(), i2),
                     longest_common_prefix(next_iterator(i1), i2));
 }
@@ -184,6 +209,18 @@ alternative_longest_common_prefix(alternative<Ts...>)
             Ts
         >()...
     );
+}
+
+// ast rules
+
+template <size_t I, typename T, typename P, size_t J, typename R, typename Q>
+constexpr size_t
+longest_common_prefix(
+        rule_iterator<I, ast_rule<T>, P> i1,
+        rule_iterator<J, R, Q> i2)
+{
+    using rule = rule_of_t<ast_rule<T>>;
+    return longest_common_prefix(make_rule_iterator<rule, P>(), i2);
 }
 
 } // namespace ant
