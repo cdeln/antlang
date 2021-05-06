@@ -78,6 +78,34 @@ TEST_CASE("repetition parser parses multiple attributed tokens")
     }
 }
 
+TEST_CASE("repetition parser parses attributed end token")
+{
+    const auto parser =
+        make_parser<
+            repetition<
+                identifier_token,
+                integer_literal_token
+            >
+        >();
+    const std::vector<token> tokens =
+    {
+        {identifier_token{"first"}, {}},
+        {identifier_token{"second"}, {}},
+        {identifier_token{"third"}, {}},
+        {integer_literal_token{"1337"}, {}}
+    };
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+    const auto& [value, position] = get_success(result);
+    REQUIRE(position == tokens.cend());
+    const auto& [values, last] = value;
+    REQUIRE(values.size() == 3);
+    CHECK(values.at(0) == "first");
+    CHECK(values.at(1) == "second");
+    CHECK(values.at(2) == "third");
+    CHECK(last == "1337");
+}
+
 TEST_CASE("repetition parser returns failure if terminal pattern is not found before end of input")
 {
     const auto parser =

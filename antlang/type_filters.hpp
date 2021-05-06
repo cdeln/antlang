@@ -183,4 +183,19 @@ struct unique
 template <template <typename...> class Template, typename... Ts>
 using unique_t = typename unique<Template, Ts...>::type;
 
+template <typename T>
+struct collapse
+{
+    using type = T;
+};
+
+template <typename T>
+using collapse_t = typename collapse<T>::type;
+
+template <typename T>
+struct collapse<std::tuple<T>>
+{
+    using type = collapse_t<T>;
+};
+
 } // namespace ant
