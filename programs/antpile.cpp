@@ -165,7 +165,12 @@ int main(int argc, char** argv)
             });
     }
 
-    tokens.push_back({ant::end_of_input_token(), {}});
+    tokens.push_back({
+        ant::end_of_input_token(), {
+            !tokens.empty() ? tokens.back().context.line : 1,
+            !tokens.empty() ? tokens.back().context.offset : 0
+        }
+    });
 
     const auto parser = ant::make_parser<ant::ast::program>();
 
