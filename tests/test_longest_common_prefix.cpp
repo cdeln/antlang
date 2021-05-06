@@ -219,3 +219,8 @@ TEST_CASE("alternative longest common prefix of two non-pure (AST) rules works a
         >;
     CHECK(alternative_longest_common_prefix(rule()) == 1);
 }
+
+TEST_CASE("longest common prefix of an AST element works as expected")
+{
+    CHECK(longest_common_prefix_for<ast::function, ast::structure>() == 1);
+}

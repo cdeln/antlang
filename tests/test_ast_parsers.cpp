@@ -441,3 +441,18 @@ TEST_CASE("can parse nested evaluation expression")
     CHECK(nested.function == "my-nested-function");
     CHECK(nested.arguments.empty());
 }
+
+TEST_CASE("parser returns failure with position to first failing token with offset exceeding LCP")
+{
+    const auto parser = make_parser<ast::statement>();
+    const std::vector<token> tokens = {
+        {left_parenthesis_token{}},
+        {structure_token{}},
+        {integer_literal_token{}}
+    };
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    CHECK(alternative_longest_common_prefix(rule_of_t<rule_of_t<ast::statement>>()) == 1);
+    REQUIRE(is_failure(result));
+    const auto& failure = get_failure(result);
+    CHECK(get_longest_failure_offset(tokens.cbegin(), failure) == 2);
+}

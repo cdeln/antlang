@@ -14,6 +14,10 @@
 namespace ant
 {
 
+ptrdiff_t
+get_longest_failure_offset(std::vector<token>::const_iterator position,
+                           parser_failure const& failure);
+
 template <typename... Ts>
 struct parser<alternative<Ts...>>
 {
@@ -48,7 +52,7 @@ struct parser<alternative<Ts...>>
         else
         {
             auto& failure = get_failure(result);
-            if (std::distance(pos, failure.position) > lcp)
+            if (get_longest_failure_offset(pos, failure) > lcp)
             {
                 return std::move(failure);
             }
@@ -60,8 +64,12 @@ struct parser<alternative<Ts...>>
             else
             {
                 auto& sub_failure = get_failure(sub_result);
-                sub_failure.children.push_back(std::move(failure));
-                return std::move(sub_failure);
+                if (get_longest_failure_offset(pos, sub_failure) > lcp)
+                {
+                    return std::move(sub_failure);
+                }
+                failure.children.push_back(std::move(sub_failure));
+                return std::move(failure);
             }
         }
     }
@@ -74,7 +82,7 @@ struct parser<alternative<Ts...>>
         if (is_failure(result))
         {
             auto& failure = get_failure(result);
-            if (std::distance(pos, failure.position) > lcp)
+            if (get_longest_failure_offset(pos, failure) > lcp)
             {
                 return std::move(failure);
             }

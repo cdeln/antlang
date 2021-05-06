@@ -85,27 +85,27 @@ TEST_CASE("alternative parser with shared-prefix alternatives returns failure "
 TEST_CASE("alternative parser with shared-prefix alternatives returns failure "
           "with iterator to position of first failing token when distance exceed lcp")
 {
-    const auto parser =
-        make_parser<
-            alternative<
-                sequence<
-                    left_parenthesis_token,
-                    identifier_token
-                >,
-                sequence<
-                    left_parenthesis_token,
-                    integer_literal_token,
-                    right_parenthesis_token
-                >
+    using rule =
+        alternative<
+            sequence<
+                left_parenthesis_token,
+                identifier_token
+            >,
+            sequence<
+                left_parenthesis_token,
+                integer_literal_token,
+                right_parenthesis_token
             >
-        >();
+        >;
+    const auto parser = make_parser<rule>();
     const std::vector<token> tokens = {
         {left_parenthesis_token{}},
         {integer_literal_token{}},
         {identifier_token{}}
     };
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
-    CHECK(is_failure(result));
+    CHECK(alternative_longest_common_prefix(rule()) == 1);
+    REQUIRE(is_failure(result));
     const auto& failure = get_failure(result);
     CHECK(std::distance(tokens.cbegin(), failure.position) == 2);
 }

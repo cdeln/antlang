@@ -51,7 +51,7 @@ struct parser<repetition<T, End>>
             }
             else
             {
-                return get_failure(sub_result);
+                return std::move(get_failure(sub_result));
             }
         }
 
