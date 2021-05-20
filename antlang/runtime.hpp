@@ -86,7 +86,7 @@ using expression_base =
         operation,
         recursive_wrapper<evaluation>,
         recursive_wrapper<condition>,
-        recursive_wrapper<scope>
+        std::unique_ptr<scope>
     >;
 
 struct expression : public expression_base

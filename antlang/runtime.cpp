@@ -88,9 +88,9 @@ struct expression_executor
         return execute(cond);
     }
 
-    value_variant operator()(scope& expr) const
+    value_variant operator()(std::unique_ptr<scope>& expr) const
     {
-        return execute(expr);
+        return execute(*expr);
     }
 };
 

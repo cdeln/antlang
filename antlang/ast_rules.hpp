@@ -186,7 +186,8 @@ struct ast_rule<ast::expression> :
             ast::reference,
             ast::literal_variant,
             ast::evaluation,
-            ast::condition
+            ast::condition,
+            ast::scope
         >,
         ast::expression
     >

@@ -5,15 +5,14 @@
 namespace ant
 {
 
-compiler_expect<runtime::scope>
+compiler_expect<std::unique_ptr<runtime::scope>>
 compile(compiler_environment const& env,
-        compiler_scope& scope,
+        compiler_scope const& parent_scope,
         ast::scope const& expr)
 {
-    runtime::scope compiled_let;
-    compiled_let.bindings.reserve(expr.bindings.size());
-
-    std::string result_type;
+    compiler_scope scope = parent_scope;
+    auto compiled_let = std::make_unique<runtime::scope>();
+    compiled_let->bindings.reserve(expr.bindings.size());
 
     for (size_t i = 0; i < expr.bindings.size(); ++i)
     {
@@ -37,9 +36,9 @@ compile(compiler_environment const& env,
 
         auto binding_result_prototype = runtime::execute(binding_value);
         runtime::binding compiled_binding = {std::move(binding_result_prototype), std::move(binding_value)};
-        compiled_let.bindings.push_back(std::move(compiled_binding));
+        compiled_let->bindings.push_back(std::move(compiled_binding));
         compiler_result<runtime::value_variant*> result = {
-            &compiled_let.bindings.back().result,
+            &compiled_let->bindings.back().result,
             std::move(binding_value_type)
         };
         scope.parameters.insert(it, std::make_pair(binding.name, std::move(result)));
@@ -54,9 +53,9 @@ compile(compiler_environment const& env,
 
     auto& [value_expr, value_type] = get_success(value_result);
 
-    compiled_let.value = std::move(value_expr);
+    compiled_let->value = std::move(value_expr);
 
-    return compiler_result<runtime::scope>{
+    return compiler_result<std::unique_ptr<runtime::scope>>{
         std::move(compiled_let),
         value_type
     };

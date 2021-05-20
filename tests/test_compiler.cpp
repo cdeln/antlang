@@ -405,16 +405,12 @@ TEST_CASE_FIXTURE(fixture, "compile let expression with literal binding")
         {ast::reference{"x"}}
     };
     auto result = compile(env, scope, expr);
-    if (is_failure(result))
-    {
-        MESSAGE(get_failure(result).message);
-    }
     REQUIRE(is_success(result));
-    auto& [compiled, type] = get_success(result);
-    REQUIRE(compiled.bindings.size() == 1);
-    REQUIRE(holds<int32_t>(compiled.bindings.at(0).result));
-    REQUIRE(holds<runtime::value_variant*>(compiled.value));
-    auto* variant = get<runtime::value_variant*>(compiled.value);
+    auto& [let, type] = get_success(result);
+    REQUIRE(let->bindings.size() == 1);
+    REQUIRE(holds<int32_t>(let->bindings.at(0).result));
+    REQUIRE(holds<runtime::value_variant*>(let->value));
+    auto* variant = get<runtime::value_variant*>(let->value);
     REQUIRE(holds<int32_t>(*variant));
     CHECK(get<int32_t>(*variant) == 1337);
 }

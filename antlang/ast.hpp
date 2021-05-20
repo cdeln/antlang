@@ -88,7 +88,8 @@ using expression =
         reference,
         literal_variant,
         evaluation,
-        condition
+        condition,
+        scope
     >;
 
 struct evaluation
@@ -105,17 +106,17 @@ struct condition
     token_context context;
 };
 
+struct scope
+{
+    std::vector<binding> bindings;
+    recursive_wrapper<expression> value;
+    token_context context;
+};
+
 struct branch
 {
     expression check;
     expression value;
-};
-
-struct scope
-{
-    std::vector<binding> bindings;
-    expression value;
-    token_context context;
 };
 
 struct binding

@@ -67,6 +67,21 @@ struct expression_compiler
             return std::move(get_failure(result));
         }
     }
+
+    compiler_expect<runtime::expression>
+    operator()(ast::scope const& expr)
+    {
+        compiler_expect<std::unique_ptr<runtime::scope>> result = compile(env, scope, expr);
+        if (is_success(result))
+        {
+            auto& [value, type] = get_success(result);
+            return compiler_result<runtime::expression>{std::move(value), std::move(type)};
+        }
+        else
+        {
+            return std::move(get_failure(result));
+        }
+    }
 };
 
 compiler_expect<runtime::expression>

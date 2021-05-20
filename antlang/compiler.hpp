@@ -131,11 +131,11 @@ compile(compiler_environment const& env,
 compiler_expect<runtime::expression>
 compile(compiler_environment const& env,
         compiler_scope const& scope,
-        ast::expression const& eval);
+        ast::expression const& expr);
 
-compiler_expect<runtime::scope>
+compiler_expect<std::unique_ptr<runtime::scope>>
 compile(compiler_environment const& env,
-        compiler_scope& scope,
+        compiler_scope const& scope,
         ast::scope const& expr);
 
 exceptional<compiled_function_result, compiler_failure>
