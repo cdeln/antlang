@@ -174,6 +174,42 @@ TEST_CASE("execute condition with evaluation check and literal value type")
     }
 }
 
+TEST_CASE("execute integer literal binding")
+{
+    binding expr;
+    expr.value = int32_t{1337};
+    execute(expr);
+    REQUIRE(holds<int32_t>(expr.result));
+    CHECK(get<int32_t>(expr.result) == 1337);
+}
+
+TEST_CASE("execute evaluation binding")
+{
+    function func;
+    func.parameters.resize(1);
+    func.value = &func.parameters.at(0);
+
+    binding expr;
+    expr.value = evaluation(&func);
+
+    evaluation& eval = get<evaluation>(expr.value);
+    eval.arguments.at(0) = int32_t{1337};
+    execute(expr);
+
+    REQUIRE(holds<int32_t>(expr.result));
+    CHECK(get<int32_t>(expr.result) == 1337);
+}
+
+TEST_CASE("execute scope with reference to binding result")
+{
+    scope expr;
+    expr.bindings.push_back({int32_t{}, int32_t{1337}});
+    expr.value = &expr.bindings.at(0).result;
+    value_variant result= execute(expr);
+    REQUIRE(holds<int32_t>(result));
+    CHECK(get<int32_t>(result) == 1337);
+}
+
 TEST_CASE("execute plus operation works adds two integers")
 {
     function blueprint;

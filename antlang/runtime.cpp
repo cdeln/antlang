@@ -87,11 +87,30 @@ struct expression_executor
     {
         return execute(cond);
     }
+
+    value_variant operator()(scope& expr) const
+    {
+        return execute(expr);
+    }
 };
 
 value_variant execute(expression& expr)
 {
     return visit(expression_executor(), expr);
+}
+
+void execute(binding& expr)
+{
+    expr.result = execute(expr.value);
+}
+
+value_variant execute(scope& expr)
+{
+    for (binding& x : expr.bindings)
+    {
+        execute(x);
+    }
+    return execute(expr.value);
 }
 
 }  // namespace runtime

@@ -76,6 +76,7 @@ operation make_binary_operator(function* blueprint)
 
 struct evaluation;
 struct condition;
+struct scope;
 
 using expression_base =
     recursive_variant<
@@ -84,7 +85,8 @@ using expression_base =
         construction,
         operation,
         recursive_wrapper<evaluation>,
-        recursive_wrapper<condition>
+        recursive_wrapper<condition>,
+        recursive_wrapper<scope>
     >;
 
 struct expression : public expression_base
@@ -120,6 +122,18 @@ struct condition
 {
     std::vector<branch> branches;
     expression fallback;
+};
+
+struct binding
+{
+    value_variant result;
+    expression value;
+};
+
+struct scope
+{
+    std::vector<binding> bindings;
+    expression value;
 };
 
 struct arithmetic_error : public std::runtime_error
@@ -168,6 +182,10 @@ structure execute(construction& ctor);
 value_variant execute(expression& expr);
 
 value_variant execute(condition& expr);
+
+void execute(binding& expr);
+
+value_variant execute(scope& expr);
 
 }  // namespace runtime
 }  // namespace ant
