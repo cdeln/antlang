@@ -108,6 +108,8 @@ token_alternative_builder<Token>::pattern() const
 
 template class token_alternative_builder<left_parenthesis_token>;
 template class token_alternative_builder<right_parenthesis_token>;
+template class token_alternative_builder<left_bracket_token>;
+template class token_alternative_builder<right_bracket_token>;
 template class token_alternative_builder<function_token>;
 template class token_alternative_builder<structure_token>;
 template class token_alternative_builder<condition_token>;

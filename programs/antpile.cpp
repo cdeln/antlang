@@ -127,6 +127,30 @@ void print(ant::runtime::value_variant const& value)
     std::cout << format(value) << '\n';
 }
 
+struct token_formatter
+{
+    template <typename T>
+    std::string operator()(T const&) const
+    {
+        return ant::ast::name_of_v<T>;
+    }
+};
+
+std::string format(ant::token const& token)
+{
+    return visit(token_formatter(), token.variant);
+}
+
+void print_tokens(const std::vector<ant::token>& tokens)
+{
+    std::cout << "Parsed token stream:\n";
+    for (const auto& token : tokens)
+    {
+        std::cout << format(token) << ' ';
+    }
+    std::cout << '\n';
+}
+
 int main(int argc, char** argv)
 {
     const int arg_count = argc - 1;
@@ -179,6 +203,7 @@ int main(int argc, char** argv)
     if (is_failure(parsed))
     {
         parser_failure_handler(input_file_path, lines).handle(get_failure(parsed));
+        print_tokens(tokens);
         return -1;
     }
 

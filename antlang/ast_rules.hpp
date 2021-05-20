@@ -202,10 +202,10 @@ template <>
 struct ast_rule<ast::branch> :
     rule_spec<
         sequence<
-            left_parenthesis_token,
+            left_bracket_token,
             ast::expression,
             ast::expression,
-            right_parenthesis_token
+            right_bracket_token
         >,
         ast::branch
     >
@@ -223,12 +223,10 @@ struct ast_rule<ast::condition> :
         sequence<
             left_parenthesis_token,
             condition_token,
-            left_parenthesis_token,
             repetition<
                 ast::branch,
-                right_parenthesis_token
+                ast::expression
             >,
-            ast::expression,
             right_parenthesis_token
         >,
         ast::condition

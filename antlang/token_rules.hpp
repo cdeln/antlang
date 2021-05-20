@@ -25,6 +25,24 @@ struct rule_of<right_parenthesis_token>
 };
 
 template <>
+struct rule_of<left_bracket_token>
+{
+    using type =
+        non_attributed_token_rule<
+            left_bracket_token
+        >;
+};
+
+template <>
+struct rule_of<right_bracket_token>
+{
+    using type =
+        non_attributed_token_rule<
+            right_bracket_token
+        >;
+};
+
+template <>
 struct rule_of<function_token>
 {
     using type =

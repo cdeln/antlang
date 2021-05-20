@@ -19,6 +19,18 @@ struct right_parenthesis_token
     static constexpr char pattern[] = R"(\))";
 };
 
+struct left_bracket_token
+{
+    static constexpr char name[] = "[";
+    static constexpr char pattern[] = R"(\[)";
+};
+
+struct right_bracket_token
+{
+    static constexpr char name[] = "]";
+    static constexpr char pattern[] = R"(\])";
+};
+
 struct function_token
 {
     static constexpr char name[] = "function";
@@ -61,7 +73,7 @@ struct boolean_literal_token
 struct identifier_token
 {
     static constexpr char name[] = "identifier";
-    static constexpr char pattern[] = R"([^() ]+)";
+    static constexpr char pattern[] = R"([^()\[\] ]+)";
     std::string value;
 };
 
@@ -75,6 +87,8 @@ using token_variant =
     recursive_variant<
         left_parenthesis_token,
         right_parenthesis_token,
+        left_bracket_token,
+        right_bracket_token,
         function_token,
         structure_token,
         condition_token,

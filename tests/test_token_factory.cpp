@@ -31,19 +31,23 @@ TEST_CASE("token factory creates all tokens")
     REQUIRE(holds<left_parenthesis_token>(left_parenthesis));
     auto right_parenthesis = factory.create(1, ")");
     REQUIRE(holds<right_parenthesis_token>(right_parenthesis));
-    auto function = factory.create(2, "function");
+    auto left_bracket = factory.create(2, "[");
+    REQUIRE(holds<left_bracket_token>(left_bracket));
+    auto right_bracket = factory.create(3, "]");
+    REQUIRE(holds<right_bracket_token>(right_bracket));
+    auto function = factory.create(4, "function");
     REQUIRE(holds<function_token>(function));
-    auto structure = factory.create(3, "structure");
+    auto structure = factory.create(5, "structure");
     REQUIRE(holds<structure_token>(structure));
-    auto condition = factory.create(4, "condition");
+    auto condition = factory.create(6, "condition");
     REQUIRE(holds<condition_token>(condition));
-    auto floating = factory.create(5, "01234.56789");
+    auto floating = factory.create(7, "01234.56789");
     REQUIRE(holds<floating_point_literal_token>(floating));
-    auto integer = factory.create(6, "0123456789");
+    auto integer = factory.create(8, "0123456789");
     REQUIRE(holds<integer_literal_token>(integer));
-    auto boolean = factory.create(7, "true");
+    auto boolean = factory.create(9, "true");
     REQUIRE(holds<boolean_literal_token>(boolean));
     auto identifier = factory.create(
-        8, "abcdefghijklmnopqrstuvxz-ABCDEFGHIJKLMNOPQRSTUVXYZ_!@#$%^&*+!9+=~_0123456789");
+        10, "abcdefghijklmnopqrstuvxz-ABCDEFGHIJKLMNOPQRSTUVXYZ_!@#$%^&*+!9+=~_0123456789");
     REQUIRE(holds<identifier_token>(identifier));
 }

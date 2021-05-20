@@ -82,10 +82,10 @@ TEST_CASE("can parse branch")
 {
     const std::vector<token> tokens =
     {
-        {left_parenthesis_token{}},
+        {left_bracket_token{}},
         {identifier_token{"boolean-condition"}},
         {identifier_token{"reference-name"}},
-        {right_parenthesis_token{}}
+        {right_bracket_token{}}
     };
     const auto parser = make_parser<ast::branch>();
     const auto result = parser.parse(tokens.cbegin(), tokens.cend());
@@ -99,26 +99,20 @@ TEST_CASE("can parse condition")
         {left_parenthesis_token{}},
         {condition_token{}},
 
-        // cases
-        {left_parenthesis_token{}},
-
         // first branch
-        {left_parenthesis_token{}},
+        {left_bracket_token{}},
             {identifier_token{"boolean-condition"}},
             {identifier_token{"reference-name"}},
-        {right_parenthesis_token{}},
+        {right_bracket_token{}},
 
         // second branch
-        {left_parenthesis_token{}},
+        {left_bracket_token{}},
             {boolean_literal_token{"true"}},
             {left_parenthesis_token{}},
                 {identifier_token{"i32"}},
                 {integer_literal_token{"1337"}},
             {right_parenthesis_token{}},
-        {right_parenthesis_token{}},
-
-        // end of cases
-        {right_parenthesis_token{}},
+        {right_bracket_token{}},
 
         // fallback
         {identifier_token{"i32"}},

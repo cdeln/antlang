@@ -18,6 +18,20 @@ TEST_CASE("token builder builds right_parenthesis")
     CHECK(holds<right_parenthesis_token>(token));
 }
 
+TEST_CASE("token builder builds left_parenthesis")
+{
+    token_alternative_builder<left_bracket_token> builder;
+    auto token = builder.build("[");
+    CHECK(holds<left_bracket_token>(token));
+}
+
+TEST_CASE("token builder builds right_parenthesis")
+{
+    token_alternative_builder<right_bracket_token> builder;
+    auto token = builder.build("]");
+    CHECK(holds<right_bracket_token>(token));
+}
+
 TEST_CASE("token builder builds function")
 {
     token_alternative_builder<function_token> builder;
