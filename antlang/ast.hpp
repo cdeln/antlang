@@ -114,7 +114,7 @@ struct branch
 struct scope
 {
     std::vector<binding> bindings;
-    recursive_wrapper<expression> value;
+    expression value;
     token_context context;
 };
 
@@ -122,6 +122,7 @@ struct binding
 {
     std::string name;
     expression value;
+    token_context context;
 };
 
 struct function

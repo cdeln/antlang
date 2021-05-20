@@ -133,6 +133,11 @@ compile(compiler_environment const& env,
         compiler_scope const& scope,
         ast::expression const& eval);
 
+compiler_expect<runtime::scope>
+compile(compiler_environment const& env,
+        compiler_scope& scope,
+        ast::scope const& expr);
+
 exceptional<compiled_function_result, compiler_failure>
 compile(compiler_environment const& env,
         ast::function const& function);

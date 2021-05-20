@@ -398,6 +398,27 @@ TEST_CASE_FIXTURE(fixture, "compile condition with conflicting returns values fa
     }
 }
 
+TEST_CASE_FIXTURE(fixture, "compile let expression with literal binding")
+{
+    const ast::scope expr = {
+        {{"x", ast::literal<int32_t>{1337}}},
+        {ast::reference{"x"}}
+    };
+    auto result = compile(env, scope, expr);
+    if (is_failure(result))
+    {
+        MESSAGE(get_failure(result).message);
+    }
+    REQUIRE(is_success(result));
+    auto& [compiled, type] = get_success(result);
+    REQUIRE(compiled.bindings.size() == 1);
+    REQUIRE(holds<int32_t>(compiled.bindings.at(0).result));
+    REQUIRE(holds<runtime::value_variant*>(compiled.value));
+    auto* variant = get<runtime::value_variant*>(compiled.value);
+    REQUIRE(holds<int32_t>(*variant));
+    CHECK(get<int32_t>(*variant) == 1337);
+}
+
 TEST_CASE_FIXTURE(fixture,
     "compile statement with function effects the runtime program and the compiler environment")
 {
