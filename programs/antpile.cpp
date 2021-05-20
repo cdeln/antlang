@@ -2,6 +2,7 @@
 #include "formatting.hpp"
 #include "tokenizer.hpp"
 #include "parser.hpp"
+#include "pre_processing.hpp"
 #include "token_rules.hpp"
 
 #include <algorithm>
@@ -178,7 +179,7 @@ int main(int argc, char** argv)
     {
         line_number += 1;
         lines.push_back(line);
-        auto t = tokenizer.tokenize(line);
+        auto t = tokenizer.tokenize(ant::remove_comments(line));
         std::transform(
             std::move_iterator(t.begin()), std::move_iterator(t.end()),
             std::back_inserter(tokens),
