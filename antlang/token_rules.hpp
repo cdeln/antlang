@@ -70,6 +70,15 @@ struct rule_of<condition_token>
 };
 
 template <>
+struct rule_of<scope_token>
+{
+    using type =
+        non_attributed_token_rule<
+           scope_token
+        >;
+};
+
+template <>
 struct rule_of<floating_point_literal_token>
 {
     using type =

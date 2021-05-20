@@ -79,6 +79,8 @@ struct reference
 
 struct branch;
 struct condition;
+struct binding;
+struct scope;
 struct evaluation;
 
 using expression =
@@ -106,6 +108,19 @@ struct condition
 struct branch
 {
     expression check;
+    expression value;
+};
+
+struct scope
+{
+    std::vector<binding> bindings;
+    recursive_wrapper<expression> value;
+    token_context context;
+};
+
+struct binding
+{
+    std::string name;
     expression value;
 };
 
@@ -175,6 +190,8 @@ template <> struct name_of<expression>      { static constexpr auto value = "exp
 template <> struct name_of<function>        { static constexpr auto value = "function";   };
 template <> struct name_of<branch>          { static constexpr auto value = "branch";     };
 template <> struct name_of<condition>       { static constexpr auto value = "condition";  };
+template <> struct name_of<binding>         { static constexpr auto value = "binding";    };
+template <> struct name_of<scope>           { static constexpr auto value = "scope";      };
 template <> struct name_of<structure>       { static constexpr auto value = "structure";  };
 template <> struct name_of<statement>       { static constexpr auto value = "statement";  };
 template <> struct name_of<program>         { static constexpr auto value = "program";    };

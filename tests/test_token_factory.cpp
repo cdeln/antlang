@@ -41,13 +41,15 @@ TEST_CASE("token factory creates all tokens")
     REQUIRE(holds<structure_token>(structure));
     auto condition = factory.create(6, "when");
     REQUIRE(holds<condition_token>(condition));
-    auto floating = factory.create(7, "01234.56789");
+    auto scope = factory.create(7, "let");
+    REQUIRE(holds<scope_token>(scope));
+    auto floating = factory.create(8, "01234.56789");
     REQUIRE(holds<floating_point_literal_token>(floating));
-    auto integer = factory.create(8, "0123456789");
+    auto integer = factory.create(9, "0123456789");
     REQUIRE(holds<integer_literal_token>(integer));
-    auto boolean = factory.create(9, "true");
+    auto boolean = factory.create(10, "true");
     REQUIRE(holds<boolean_literal_token>(boolean));
     auto identifier = factory.create(
-        10, "abcdefghijklmnopqrstuvxz-ABCDEFGHIJKLMNOPQRSTUVXYZ_!@#$%^&*+!9+=~_0123456789");
+        11, "abcdefghijklmnopqrstuvxz-ABCDEFGHIJKLMNOPQRSTUVXYZ_!@#$%^&*+!9+=~_0123456789");
     REQUIRE(holds<identifier_token>(identifier));
 }

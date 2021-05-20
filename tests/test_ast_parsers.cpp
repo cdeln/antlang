@@ -436,6 +436,42 @@ TEST_CASE("can parse nested evaluation expression")
     CHECK(nested.arguments.empty());
 }
 
+TEST_CASE("can parse let expression")
+{
+    const std::vector<token> tokens =
+    {
+        {left_parenthesis_token{}},
+        {scope_token{}},
+
+        // first bind
+        {left_bracket_token{}},
+            {identifier_token{"x"}},
+            {identifier_token{"y"}},
+        {right_bracket_token{}},
+
+        // second bind
+        {left_bracket_token{}},
+            {identifier_token{"z"}},
+            {left_parenthesis_token{}},
+                {identifier_token{"i32"}},
+                {integer_literal_token{"1337"}},
+            {right_parenthesis_token{}},
+        {right_bracket_token{}},
+
+        // expression
+        {left_parenthesis_token{}},
+            {identifier_token{"+"}},
+            {identifier_token{"x"}},
+            {identifier_token{"y"}},
+        {right_parenthesis_token{}},
+
+        {right_parenthesis_token{}}
+    };
+    const auto parser = make_parser<ast::scope>();
+    const auto result = parser.parse(tokens.cbegin(), tokens.cend());
+    REQUIRE(is_success(result));
+}
+
 TEST_CASE("parser returns failure with position to first failing token with offset exceeding LCP")
 {
     const auto parser = make_parser<ast::statement>();

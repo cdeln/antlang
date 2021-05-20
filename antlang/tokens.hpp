@@ -49,6 +49,12 @@ struct condition_token
     static constexpr char pattern[] = "when";
 };
 
+struct scope_token
+{
+    static constexpr char name[] = "let";
+    static constexpr char pattern[] = "let";
+};
+
 struct floating_point_literal_token
 {
     static constexpr char name[] = "floating-point-literal";
@@ -92,6 +98,7 @@ using token_variant =
         function_token,
         structure_token,
         condition_token,
+        scope_token,
         floating_point_literal_token,
         integer_literal_token,
         boolean_literal_token,

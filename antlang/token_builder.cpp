@@ -113,6 +113,7 @@ template class token_alternative_builder<right_bracket_token>;
 template class token_alternative_builder<function_token>;
 template class token_alternative_builder<structure_token>;
 template class token_alternative_builder<condition_token>;
+template class token_alternative_builder<scope_token>;
 template class token_alternative_builder<floating_point_literal_token>;
 template class token_alternative_builder<integer_literal_token>;
 template class token_alternative_builder<boolean_literal_token>;

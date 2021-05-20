@@ -240,6 +240,47 @@ struct rule_of<ast::condition>
 };
 
 template <>
+struct ast_rule<ast::binding> :
+    rule_spec<
+        sequence<
+            left_bracket_token,
+            identifier_token,
+            ast::expression,
+            right_bracket_token
+        >,
+        ast::binding
+    >
+{};
+
+template <>
+struct rule_of<ast::binding>
+{
+    using type = ast_rule<ast::binding>;
+};
+
+template <>
+struct ast_rule<ast::scope> :
+    rule_spec<
+        sequence<
+            left_parenthesis_token,
+            scope_token,
+            repetition<
+                ast::binding,
+                ast::expression
+            >,
+            right_parenthesis_token
+        >,
+        ast::scope
+    >
+{};
+
+template <>
+struct rule_of<ast::scope>
+{
+    using type = ast_rule<ast::scope>;
+};
+
+template <>
 struct ast_rule<ast::evaluation> :
     rule_spec<
         sequence<
