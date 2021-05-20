@@ -39,7 +39,7 @@ TEST_CASE("token factory creates all tokens")
     REQUIRE(holds<function_token>(function));
     auto structure = factory.create(5, "structure");
     REQUIRE(holds<structure_token>(structure));
-    auto condition = factory.create(6, "condition");
+    auto condition = factory.create(6, "when");
     REQUIRE(holds<condition_token>(condition));
     auto floating = factory.create(7, "01234.56789");
     REQUIRE(holds<floating_point_literal_token>(floating));

@@ -4,7 +4,7 @@
 
 using namespace ant;
 
-TEST_CASE("string_tokenizer_tokenizes_simple_string_with_all_tokens")
+TEST_CASE("tokenizer tokenizes simple string with some tokens")
 {
     constexpr auto string = "() function structure i337 1337 13.37";
     const tokenizer tokenizer;

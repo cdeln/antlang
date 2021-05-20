@@ -45,8 +45,8 @@ struct structure_token
 
 struct condition_token
 {
-    static constexpr char name[] = "condition";
-    static constexpr char pattern[] = "condition";
+    static constexpr char name[] = "when";
+    static constexpr char pattern[] = "when";
 };
 
 struct floating_point_literal_token

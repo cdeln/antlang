@@ -49,7 +49,7 @@ TEST_CASE("token builder builds structure")
 TEST_CASE("token builder builds condition")
 {
     token_alternative_builder<condition_token> builder;
-    auto token = builder.build("condition");
+    auto token = builder.build("when");
     CHECK(holds<condition_token>(token));
 }
 
