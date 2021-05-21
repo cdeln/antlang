@@ -14,7 +14,7 @@ class tokenizer
 {
 public:
 
-    explicit tokenizer(token_factory&& factor);
+    explicit tokenizer(token_factory&& factory);
 
     tokenizer();
 
