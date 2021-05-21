@@ -106,11 +106,18 @@ void execute(binding& expr)
 
 value_variant execute(scope& expr)
 {
-    for (binding& x : expr.bindings)
+    std::vector<value_variant> backup;
+    backup.reserve(expr.bindings.size());
+    std::transform(expr.bindings.cbegin(), expr.bindings.cend(),
+                   std::back_inserter(backup),
+                   [](auto const& e) { return e.result; });
+    std::for_each(expr.bindings.begin(), expr.bindings.end(), [](auto& e) { execute(e); });
+    const auto value = execute(expr.value);
+    for (size_t i = 0; i < backup.size(); ++i)
     {
-        execute(x);
+        expr.bindings.at(i).result = std::move(backup.at(i));
     }
-    return execute(expr.value);
+    return value;
 }
 
 }  // namespace runtime
