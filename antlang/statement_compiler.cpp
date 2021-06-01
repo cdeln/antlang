@@ -10,7 +10,7 @@ make_constructor(runtime::structure const& prototype)
     constructor->parameters = prototype.fields;
     // bootstrap the type system!
     constructor->value = runtime::construction(constructor.get());
-    return std::move(constructor);
+    return constructor;
 }
 
 function_meta

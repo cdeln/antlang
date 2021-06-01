@@ -78,7 +78,7 @@ struct parser<attributed_token_rule<Token, none>>
                     << ", got " << quote(token_name(pos->variant));
             return parser_success<none>{message.str(), pos->context};
         }
-        return {none{}, pos + 1};
+        return parser_result<none>{none{}, pos + 1};
     }
 };
 
