@@ -6,11 +6,11 @@ using namespace ant;
 
 TEST_CASE("tokenizer tokenizes simple string with some tokens")
 {
-    constexpr auto string = "() function structure i337 1337 13.37";
+    constexpr auto string = "() function structure i337 1337 +1337 -1337 13.37 +13.37 -13.37";
     const tokenizer tokenizer;
     const auto tokens = tokenizer.tokenize(string);
 
-    REQUIRE(tokens.size() == 7);
+    REQUIRE(tokens.size() == 11);
 
     CHECK(holds<left_parenthesis_token>(tokens.at(0).variant));
     CHECK(holds<right_parenthesis_token>(tokens.at(1).variant));
@@ -23,6 +23,18 @@ TEST_CASE("tokenizer tokenizes simple string with some tokens")
     REQUIRE(holds<integer_literal_token>(tokens.at(5).variant));
     CHECK(get<integer_literal_token>(tokens.at(5).variant).value == "1337");
 
-    REQUIRE(holds<floating_point_literal_token>(tokens.at(6).variant));
-    CHECK(get<floating_point_literal_token>(tokens.at(6).variant).value == "13.37");
+    REQUIRE(holds<integer_literal_token>(tokens.at(6).variant));
+    CHECK(get<integer_literal_token>(tokens.at(6).variant).value == "+1337");
+
+    REQUIRE(holds<integer_literal_token>(tokens.at(7).variant));
+    CHECK(get<integer_literal_token>(tokens.at(7).variant).value == "-1337");
+
+    REQUIRE(holds<floating_point_literal_token>(tokens.at(8).variant));
+    CHECK(get<floating_point_literal_token>(tokens.at(8).variant).value == "13.37");
+
+    REQUIRE(holds<floating_point_literal_token>(tokens.at(9).variant));
+    CHECK(get<floating_point_literal_token>(tokens.at(9).variant).value == "+13.37");
+
+    REQUIRE(holds<floating_point_literal_token>(tokens.at(10).variant));
+    CHECK(get<floating_point_literal_token>(tokens.at(10).variant).value == "-13.37");
 }

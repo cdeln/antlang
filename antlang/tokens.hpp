@@ -58,14 +58,14 @@ struct scope_token
 struct floating_point_literal_token
 {
     static constexpr char name[] = "floating-point-literal";
-    static constexpr char pattern[] = R"([0-9]+[.][0-9]+)";
+    static constexpr char pattern[] = R"([+-]?[0-9]+[.][0-9]+)";
     std::string value;
 };
 
 struct integer_literal_token
 {
     static constexpr char name[] = "integer-literal";
-    static constexpr char pattern[] = R"([0-9]+)";
+    static constexpr char pattern[] = R"([+-]?[0-9]+)";
     std::string value;
 };
 
