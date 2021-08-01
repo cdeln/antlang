@@ -1,0 +1,7 @@
+: 1
+name: antlang
+summary: Antlang - The Ant Programming Language
+license: proprietary
+version: 0.1.0-a.0.z
+depends: * build2 >= 0.13.0
+depends: * bpkg >= 0.13.0

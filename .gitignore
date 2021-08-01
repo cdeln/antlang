@@ -1,3 +1,4 @@
-build/
+.bdep/
+bootstrap/
 *.swp
 tags

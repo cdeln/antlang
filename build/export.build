@@ -1,0 +1,6 @@
+$out_root/
+{
+    include antlang/
+}
+
+export $out_root/antlang/$import.target

@@ -1,0 +1,4 @@
+libs{antlang}: {hxx cxx}{**}
+{
+    cxx.export.poptions =+ "-I$out_root/antlang" "-I$src_root/antlang"
+}
