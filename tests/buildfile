@@ -1,3 +1,7 @@
-import libs = antlang%lib{antlang}
+include ../antlang/
 
-exe{test}: cxx{**} $libs
+exe{test}: cxx{**} ../antlang/lib{antlang}
+
+exe{*}: test = true
+
+test.target = $cxx.target

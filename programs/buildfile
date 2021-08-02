@@ -1,3 +1,3 @@
-import libs = antlang%lib{antlang}
+include ../antlang/
 
-exe{antpile}: cxx{antpile} $libs
+exe{antpile}: cxx{antpile} ../antlang/libs{antlang}

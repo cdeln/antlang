@@ -2,5 +2,6 @@ project = antlang
 
 using version
 using config
+using test
 using install
 using dist
