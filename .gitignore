@@ -2,3 +2,5 @@
 bootstrap/
 *.swp
 tags
+programs/antpile
+tests/test
