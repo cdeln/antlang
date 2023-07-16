@@ -1,0 +1,5 @@
+(structure i32-pair
+   i32 first
+   i32 second)
+
+(i32-pair (i32 13) (i32 37))

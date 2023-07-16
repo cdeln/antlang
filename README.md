@@ -43,6 +43,22 @@ where `<binding>` is a pair of a local variable name and value
 
     [ <name> value> ]
 
+
+#### Structures
+Antlang supports definition and construction of structures (but has no way to use them yet...).
+A structure is defined by
+
+    (structure <name> <fields>...)
+
+where `<field>` is defined a sequence of types and field name.
+For example, one might construct a tuple of `i32` as follows
+
+    (structure i32-pair
+      i32 first
+      i32 second)
+
+Semantically, defining a structure with `<name>` simultaneously defines a type with `<name>` and a constructor function with the same `<name>` with return type `<name>`.
+
 ### Example
 As an example, we put together all syntax elements into a function counting all numbers between `0` and `n`
 
