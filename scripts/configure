@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cmake -S . -B out -DCMAKE_BUILD_TYPE=Release "${@}"

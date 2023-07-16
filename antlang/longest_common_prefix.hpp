@@ -6,6 +6,8 @@
 #include "ast_rules.hpp"
 #include "type_filters.hpp"
 
+#include <limits>
+
 namespace ant
 {
 
