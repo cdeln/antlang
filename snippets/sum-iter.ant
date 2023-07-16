@@ -1,0 +1,29 @@
+(function sum-impl i32 (i32 accum i32 n)
+  (when [(= n (i32 0)) accum]
+        (sum-impl (+ accum n) (- n (i32 1)))))
+
+(function sum-impl-buggy i32 (i32 n i32 accum)
+  (when [(= n (i32 0)) accum]
+        (sum-impl-buggy (- n (i32 1)) (+ accum n))))
+
+(function sum i32 (i32 n)
+  (sum-impl (i32 0) n))
+
+(function sum-buggy i32 (i32 n)
+  (sum-impl-buggy n (i32 0)))
+
+(sum (i32 0))
+(sum (i32 1))
+(sum (i32 2))
+(sum (i32 3))
+(sum (i32 4))
+(sum (i32 5))
+(sum (i32 6))
+
+(sum-buggy (i32 0))
+(sum-buggy (i32 1))
+(sum-buggy (i32 2))
+(sum-buggy (i32 3))
+(sum-buggy (i32 4))
+(sum-buggy (i32 5))
+(sum-buggy (i32 6))

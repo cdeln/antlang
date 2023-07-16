@@ -1,0 +1,12 @@
+(function count-impl i32 (i32 n i32 m)
+  (when [(= n (i32 0)) m]
+        (count-impl (- n (i32 1)) (+ m (i32 1)))))
+
+(function count i32 (i32 n)
+  (count-impl n (i32 0)))
+
+(count (i32 0))
+(count (i32 1))
+(count (i32 2))
+(count (i32 3))
+(count (i32 4))

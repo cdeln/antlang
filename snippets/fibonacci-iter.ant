@@ -1,0 +1,35 @@
+(function fib-impl i32 (i32 n i32 a i32 b)
+  ;; Due to bug in implementation we need to introduce temporary
+  (let [c (+ a b)]
+    (when [(= n (i32 1)) b]
+          (fib-impl (- n (i32 1)) b c))))
+
+(function fib i32 (i32 n)
+  (when [(< n (i32 2)) (i32 1)]
+        (fib-impl n (i32 1) (i32 1))))
+
+(fib (i32 0))
+(fib (i32 1))
+(fib (i32 2))
+(fib (i32 3))
+(fib (i32 4))
+(fib (i32 5))
+(fib (i32 6))
+(fib (i32 7))
+(fib (i32 8))
+(fib (i32 9))
+(fib (i32 10))
+(fib (i32 11))
+(fib (i32 12))
+(fib (i32 13))
+(fib (i32 14))
+(fib (i32 15))
+(fib (i32 16))
+(fib (i32 17))
+(fib (i32 18))
+(fib (i32 19))
+(fib (i32 20))
+(fib (i32 21))
+(fib (i32 22))
+(fib (i32 23))
+(fib (i32 24))

@@ -1,6 +1,21 @@
 # Antlang
 
-A statically typed LISP-like language.
+An experimental statically typed Lisp.
+
+## Introduction to the language
+The current implementation compiles the source code directly into an executable runtime tree format (i.e. not bytecode).
+The language compiler is called Antpile, and currently it takes a source file with a sequence of expressions, compiles them and then evaluates them directly like a script.
+
+### Syntax
+
+### Functions
+Functions are defines as follows
+
+    (function <function-name> <return-type> <parameters> <body>)
+
+where parameters are a list of interleaved types and names
+
+    (type name ...)
 
 ## Dependencies
 
@@ -30,11 +45,9 @@ If you use build2, the tests are built by default. Also, build2 does an in sourc
 
     ./tests/test
 
-## Run a Antlang file as a script
-If you built using cmake, run it like
+## Installing
+Install the Antpile compiler and evaluator
 
-    ./out/programs/antpile snippets/fibonacci.ant
+    sudo ./scripts/install
 
-If you built it using build2, run it like
-
-    ./programs/antpile snippets/fibonacci.ant
+Now you can compile Antlang programs using the `antpile` command.
