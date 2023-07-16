@@ -21,7 +21,9 @@ where parameters are a list of interleaved types and names
 
     (type name ...)
 
-### Control flow
+### Special forms
+
+#### When
 Antlang only supports one conditional built in `when` with the following syntax
 
     (when <branch>... <fallback>)
@@ -32,14 +34,24 @@ where `<branch>` is a pair of a `bool` expression and a value expression within 
 
 The `<fallback>` expression is used if no other branch is taken.
 
+#### Let
+Antlang supports let-expressions with the following syntax
+
+    (let <binding>... <body)
+
+where `<binding>` is a pair of a local variable name and value
+
+    [ <name> value> ]
+
 ### Example
-For example, a function counting all numbers between `0` and `n` can be defined as
+As an example, we put together all syntax elements into a function counting all numbers between `0` and `n`
 
     (function sum i32 (i32 n)
       (when [(= n (i32 0)) (i32 0)]
-            (+ n (sum (- n (i32 1))))))
+        (let [tmp (sum (- n (i32 1)))]
+          (+ n tmp))))
 
-and evaluated by
+which can be evaluated as
 
     (sum (i32 1337))
     ;; => 894453

@@ -1,5 +1,6 @@
 (function sum i32 (i32 n)
   (when [(= n (i32 0)) (i32 0)]
-        (+ n (sum (- n (i32 1))))))
+    (let [tmp (sum (- n (i32 1)))]
+      (+ n tmp))))
 
 (sum (i32 1337))
