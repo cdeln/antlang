@@ -8,6 +8,7 @@ if [ $EUID -ne 0 ]
 fi
 
 packages=(
+    cmake
     doctest-dev
     libboost-all-dev
 )

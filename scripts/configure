@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
+set -eu
+
 cmake -S . -B out -DCMAKE_BUILD_TYPE=Release "${@}"
