@@ -21,6 +21,8 @@ where parameters are a list of interleaved types and names
 
     (type name ...)
 
+Function overloading is supported.
+
 ### Special forms
 
 #### When
